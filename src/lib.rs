@@ -1,9 +1,9 @@
-mod aspect;
 pub mod expect;
 mod expectation_list;
+mod projection;
 mod root;
 
-pub use aspect::*;
+pub use projection::*;
 pub use root::*;
 use std::fmt::Debug;
 
@@ -21,7 +21,7 @@ pub trait Expectation<T: Debug> {
 
 /// Trait to enable fluent building of expectations
 pub trait ExpectationBuilder<'e, T: Debug> {
-    fn add_expectation(&mut self, expectation: impl Expectation<T> + 'e) -> &mut Self;
+    fn to_pass(self, expectation: impl Expectation<T> + 'e) -> Self;
 }
 
 /// Create expectations for a value.

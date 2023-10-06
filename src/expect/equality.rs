@@ -3,7 +3,7 @@ use std::fmt::Debug;
 
 /// Extension trait for
 pub trait EqualityExpectations<T> {
-    fn to_equal(&mut self, value: T) -> &mut Self;
+    fn to_equal(self, value: T) -> Self;
 }
 
 impl<'e, T, E> EqualityExpectations<T> for E
@@ -11,8 +11,8 @@ where
     T: PartialEq + Debug + 'e,
     E: ExpectationBuilder<'e, T>,
 {
-    fn to_equal(&mut self, value: T) -> &mut Self {
-        self.add_expectation(ToEqualExpectation(value))
+    fn to_equal(self, value: T) -> Self {
+        self.to_pass(ToEqualExpectation(value))
     }
 }
 

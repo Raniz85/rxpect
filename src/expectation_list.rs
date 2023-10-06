@@ -1,4 +1,4 @@
-use crate::{CheckResult, Expectation};
+use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
 pub(crate) struct ExpectationList<'e, T>(Vec<Box<dyn Expectation<T> + 'e>>);
@@ -29,9 +29,19 @@ impl<'e, T: Debug> ExpectationList<'e, T> {
                 .fold(String::new(), |a, b| a + &b + "\n")
                 .trim()
                 .to_owned();
-            CheckResult::Fail(format!("{}", message))
+            CheckResult::Fail(message)
         } else {
             CheckResult::Pass
         }
+    }
+}
+
+impl<'e, T> ExpectationBuilder<'e, T> for ExpectationList<'e, T>
+where
+    T: Debug + 'e,
+{
+    fn to_pass(mut self, expectation: impl Expectation<T> + 'e) -> Self {
+        self.push(expectation);
+        self
     }
 }

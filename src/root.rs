@@ -1,5 +1,5 @@
 use crate::expectation_list::ExpectationList;
-use crate::{AspectExpectations, CheckResult, Expectation, ExpectationBuilder};
+use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
 pub struct RootExpectations<'e, T: Debug> {
@@ -15,14 +15,6 @@ impl<'e, T: Debug> RootExpectations<'e, T> {
         }
     }
 
-    pub fn aspect<U: Debug + 'e>(
-        self,
-        transform: impl FnOnce(&T) -> U,
-    ) -> AspectExpectations<'e, Self, T, U> {
-        let value = transform(&self.value);
-        AspectExpectations::new(self, value)
-    }
-
     /// Manually run all the expectations
     pub fn check(self) {
         drop(self)
@@ -31,7 +23,7 @@ impl<'e, T: Debug> RootExpectations<'e, T> {
 
 impl<'e, T: Debug> ExpectationBuilder<'e, T> for RootExpectations<'e, T> {
     /// Add an expectation to the list of expectations
-    fn add_expectation(&mut self, expectation: impl Expectation<T> + 'e) -> &mut Self {
+    fn to_pass(mut self, expectation: impl Expectation<T> + 'e) -> Self {
         self.expectations.push(expectation);
         self
     }
@@ -56,8 +48,7 @@ mod tests {
         let (expectation, expected) = TestExpectation::new(CheckResult::Pass);
 
         // And expectations containing it
-        let mut expectations = expect(true);
-        expectations.add_expectation(expectation);
+        let expectations = expect(true).to_pass(expectation);
 
         // When the expectations are checked
         expectations.check();
@@ -67,15 +58,23 @@ mod tests {
     }
 
     #[test]
+    pub fn that_assert_works_on_references() {
+        // Given an expectation
+        let (expectation, _) = TestExpectation::new(CheckResult::Pass);
+
+        // Expect a reference to work
+        let value = true;
+        expect(&value).to_pass(expectation);
+    }
+
+    #[test]
     pub fn that_check_runs_all_expectations() {
         // Given two expectations that both pass
         let (expectation1, expected1) = TestExpectation::new(CheckResult::Pass);
         let (expectation2, expected2) = TestExpectation::new(CheckResult::Pass);
 
         // And expectations containing those
-        let mut expectations = expect(true);
-        expectations.add_expectation(expectation1);
-        expectations.add_expectation(expectation2);
+        let expectations = expect(true).to_pass(expectation1).to_pass(expectation2);
 
         // When the expectations are checked
         expectations.check();
@@ -92,8 +91,7 @@ mod tests {
         let (expectation, _) = TestExpectation::new(CheckResult::Fail("message".to_owned()));
 
         // And expectations containing it
-        let mut expectations = expect(true);
-        expectations.add_expectation(expectation);
+        let expectations = expect(true).to_pass(expectation);
 
         // Expect a panic when checked
         expectations.check();
