@@ -13,8 +13,7 @@ All other names I could come up with were already taken.
 
 ### What does it mean?
 
-Either Rust Expect or Raniz Expect, pick whichever you like best.
-
+Either _Rust Expect_ or _Raniz Expect_, pick whichever you like best.
 
 ## How do I use this thing?
 
