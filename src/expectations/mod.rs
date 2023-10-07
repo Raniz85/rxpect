@@ -1,2 +1,2 @@
-pub mod equality;
+mod equality;
 pub use equality::*;

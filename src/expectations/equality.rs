@@ -3,24 +3,36 @@ use std::fmt::Debug;
 
 /// Extension trait for
 pub trait EqualityExpectations<T> {
+
+    /// Expect the value to equal another value
+    /// ```
+    /// # use rexpect::expect;
+    /// # use rexpect::expectations::EqualityExpectations;
+    ///
+    /// let a = "foo";
+    /// let b = "foo";
+    /// expect(a).to_equal(b);
+    /// ```
+    /// asserts that `b.eq(a)` is true
     fn to_equal(self, value: T) -> Self;
 }
 
-impl<'e, T, E> EqualityExpectations<T> for E
+impl<'e, T, B> EqualityExpectations<T> for B
 where
     T: PartialEq + Debug + 'e,
-    E: ExpectationBuilder<'e, T>,
+    B: ExpectationBuilder<'e, T>,
 {
     fn to_equal(self, value: T) -> Self {
         self.to_pass(ToEqualExpectation(value))
     }
 }
 
+/// Expectation for to_equal
 struct ToEqualExpectation<T>(T);
 
 impl<T: PartialEq + Debug> Expectation<T> for ToEqualExpectation<T> {
     fn check(&self, value: &T) -> CheckResult {
-        if value.eq(&self.0) {
+        if self.0.eq(value) {
             CheckResult::Pass
         } else {
             CheckResult::Fail(format!(

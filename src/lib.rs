@@ -1,4 +1,4 @@
-pub mod expect;
+pub mod expectations;
 mod expectation_list;
 mod projection;
 mod root;
@@ -6,6 +6,10 @@ mod root;
 pub use projection::*;
 pub use root::*;
 use std::fmt::Debug;
+
+#[doc = include_str!("../README.md")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;
 
 #[derive(Clone, Debug)]
 pub enum CheckResult {
@@ -16,19 +20,23 @@ pub enum CheckResult {
 /// An expectation on a value
 pub trait Expectation<T: Debug> {
     /// Check this expectation
+    /// Returns CheckResult::Pass if the expectation pass
+    /// and CheckResult::Fail with a descriptive message if it didn't
     fn check(&self, value: &T) -> CheckResult;
 }
 
 /// Trait to enable fluent building of expectations
 pub trait ExpectationBuilder<'e, T: Debug> {
+    /// Expect the value to pass an expectation
+    /// This is intended to be used in extension methods to add expectations to the builder
     fn to_pass(self, expectation: impl Expectation<T> + 'e) -> Self;
 }
 
 /// Create expectations for a value.
 /// Used as an entrypoint for fluently building expectations
 /// ```
-/// use fluent_rs::expect;
-/// use fluent_rs::expect::EqualityExpectations;
+/// use rexpect::expect;
+/// use rexpect::expectations::EqualityExpectations;
 ///
 /// expect(1).to_equal(1);
 /// ```
