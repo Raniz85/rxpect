@@ -1,10 +1,53 @@
+//! # RXpect
+//! A Rust library for fluently building expectations in tests.
+//!
+//! ### What does it mean?
+//!
+//! Either _Rust Expect_ or _Raniz Expect_, pick whichever you like best.
+//!
+//! ## How do I use this thing?
+//!
+//! It's pretty simple actually,
+//! wrap whatever you're having expectations on with [expect] and then call the different
+//! extension methods.
+//!
+//! ```rust
+//! use rxpect::expect;
+//! use rxpect::expectations::EqualityExpectations;
+//!
+//! // Expect 1 plus 1 to equal 2
+//! expect(1 + 1).to_equal(2);
+//! ```
+//!
+//! ```shell
+//! running 1 test
+//! test tests::that_one_plus_one_equals_two ... ok
+//!
+//! test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+//! ```
+//!
+//! Failures are neatly reported:
+//!
+//! ```rust,no_run
+//! use rxpect::expect;
+//! use rxpect::expectations::EqualityExpectations;
+//!
+//! // Expect 1 plus 1 to equal 3
+//! expect(1 + 1).to_equal(3);
+//! ```
+//!
+//! ```shell
+//! thread 'main' panicked at 'Expectation failed (expected == actual)
+//! expected: `3`
+//! actual: `2`'
+//! ```
 pub mod expectations;
 mod expectation_list;
 mod projection;
 mod root;
 
-pub use projection::*;
-pub use root::*;
+pub use projection::ExpectProjection;
+pub use root::RootExpectations;
 use std::fmt::Debug;
 
 #[doc = include_str!("../README.md")]

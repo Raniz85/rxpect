@@ -2,6 +2,9 @@ use crate::expectation_list::ExpectationList;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
+/// Container for expectations on a value.
+///
+/// Returned by [expect](crate::expect)
 pub struct RootExpectations<'e, T: Debug> {
     value: T,
     expectations: ExpectationList<'e, T>,

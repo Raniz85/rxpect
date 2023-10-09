@@ -43,6 +43,21 @@ where
     U: Debug + 'e,
     B: ExpectationBuilder<'e, U>,
 {
+    /// Add expectations on a projected value
+    ///
+    /// ```
+    /// use rxpect::expect;
+    /// use rxpect::expectations::EqualityExpectations;
+    /// use rxpect::ExpectProjection;
+    ///
+    /// #[derive(Debug)]
+    /// pub struct MyStruct {
+    ///     pub foo: u32
+    /// }
+    /// expect(MyStruct{ foo: 7 }).projected_by(|it| it.foo, |foo| foo
+    ///     .to_equal(7)
+    /// );
+    /// ```
     fn projected_by(self, projection: F, config: impl FnOnce(B) -> B) -> Self;
 }
 

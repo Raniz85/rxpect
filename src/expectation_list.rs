@@ -1,7 +1,7 @@
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
-pub(crate) struct ExpectationList<'e, T>(Vec<Box<dyn Expectation<T> + 'e>>);
+pub struct ExpectationList<'e, T>(Vec<Box<dyn Expectation<T> + 'e>>);
 
 impl<'e, T: Debug> ExpectationList<'e, T> {
     pub(crate) fn new() -> Self {
