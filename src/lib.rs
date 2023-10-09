@@ -35,8 +35,8 @@ pub trait ExpectationBuilder<'e, T: Debug> {
 /// Create expectations for a value.
 /// Used as an entrypoint for fluently building expectations
 /// ```
-/// use rexpect::expect;
-/// use rexpect::expectations::EqualityExpectations;
+/// use rxpect::expect;
+/// use rxpect::expectations::EqualityExpectations;
 ///
 /// expect(1).to_equal(1);
 /// ```

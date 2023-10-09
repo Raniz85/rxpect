@@ -6,8 +6,8 @@ pub trait EqualityExpectations<T> {
 
     /// Expect the value to equal another value
     /// ```
-    /// # use rexpect::expect;
-    /// # use rexpect::expectations::EqualityExpectations;
+    /// # use rxpect::expect;
+    /// # use rxpect::expectations::EqualityExpectations;
     ///
     /// let a = "foo";
     /// let b = "foo";

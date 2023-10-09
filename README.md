@@ -22,8 +22,8 @@ wrap whatever you're having expectations on with `expect` and then call the diff
 extension methods.
 
 ```rust
-use rexpect::expect;
-use rexpect::expectations::EqualityExpectations;
+use rxpect::expect;
+use rxpect::expectations::EqualityExpectations;
 
 // Expect 1 plus 1 to equal 2
 expect(1 + 1).to_equal(2);
@@ -39,8 +39,8 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 Failures are neatly reported:
 
 ```rust,no_run
-use rexpect::expect;
-use rexpect::expectations::EqualityExpectations;
+use rxpect::expect;
+use rxpect::expectations::EqualityExpectations;
 
 // Expect 1 plus 1 to equal 3
 expect(1 + 1).to_equal(3);
