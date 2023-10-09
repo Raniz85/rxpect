@@ -1,6 +1,6 @@
 [package]
 name = "rxpect"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Daniel Raniz Raneland <raniz@raneland.se>"]
 categories = [
@@ -12,5 +12,5 @@ categories = [
 ]
 description = "Extensible fluent expectations for Rust"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/raniz85/rexpect"
-documentation = "https://docs.rs/rexpect"
+repository = "https://github.com/raniz85/rxpect"
+documentation = "https://docs.rs/rxpect"

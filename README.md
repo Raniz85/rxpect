@@ -1,4 +1,4 @@
-# RExpect
+# RXpect
 
 A Rust library for fluently building expectations in tests.
 
