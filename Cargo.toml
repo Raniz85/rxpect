@@ -4,11 +4,8 @@ version = "0.2.0"
 edition = "2021"
 authors = ["Daniel Raniz Raneland <raniz@raneland.se>"]
 categories = [
-  "assertions",
-  "expectations",
-  "fluent",
-  "matchers",
-  "testing",
+  "development-tools",
+  "development-tools::testing"
 ]
 description = "Extensible fluent expectations for Rust"
 license = "MIT OR Apache-2.0"
