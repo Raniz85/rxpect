@@ -3,3 +3,6 @@ pub use equality::*;
 
 mod order;
 pub use order::*;
+
+mod boolean;
+pub use boolean::*;
