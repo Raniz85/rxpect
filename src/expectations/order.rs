@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 
-/// Extension trait for
+/// Extension trait for ordering expectations
 pub trait OrderExpectations<T> {
 
     /// Expect the value to be less than another value

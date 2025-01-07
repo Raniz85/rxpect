@@ -1,7 +1,7 @@
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
-/// Extension trait for
+/// Extension trait for equality expectations
 pub trait EqualityExpectations<T> {
 
     /// Expect the value to equal another value

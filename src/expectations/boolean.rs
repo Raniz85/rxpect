@@ -1,7 +1,7 @@
 use crate::expectations::EqualityExpectations;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 
-/// Extension trait for
+/// Extension trait for boolean expectations
 pub trait BooleanExpectations {
 
     /// Expect the value to be true
