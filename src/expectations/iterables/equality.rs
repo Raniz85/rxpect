@@ -20,6 +20,18 @@ where
     /// ```
     /// asserts that `haystack` contains at least one item equal to `needle`
     fn to_contain_equal_to(self, value: C) -> Self;
+
+    /// Expect an iterable to contain at least one value equal to another value
+    /// ```
+    /// # use rxpect::expect;
+    /// # use rxpect::expectations::IterableItemEqualityExpectations;
+    ///
+    /// let haystack = vec!["apple", "orange", "pear", "apple", "peach"];
+    /// let needles = ["orange", "apple"];
+    /// expect(haystack).to_contain_equal_to_all_of(needles);
+    /// ```
+    /// asserts that `haystack` contains at least one item equal to each item in `needles`
+    fn to_contain_equal_to_all_of(self, values: impl IntoIterator<Item=C>) -> Self;
 }
 
 impl<'e, I, C, B> IterableItemEqualityExpectations<I, C> for B
@@ -30,12 +42,16 @@ where
     B: ExpectationBuilder<'e, I>,
 {
     fn to_contain_equal_to(self, value: C) -> Self {
-        self.to_pass(ContainsEqualToExpectation(value))
+        self.to_pass(ContainsEqualToExpectation(vec![value]))
+    }
+
+    fn to_contain_equal_to_all_of(self, values: impl IntoIterator<Item=C>) -> Self {
+        self.to_pass(ContainsEqualToExpectation(values.into_iter().collect()))
     }
 }
 
 /// Expectation for to_equal
-struct ContainsEqualToExpectation<T>(T);
+struct ContainsEqualToExpectation<T>(Vec<T>);
 
 impl<I, C> Expectation<I> for ContainsEqualToExpectation<C>
 where
@@ -44,8 +60,8 @@ where
     C: PartialEq + Debug,
 {
     fn check(&self, value: &I) -> CheckResult {
-        if value.into_iter()
-            .any(|candidate| candidate.eq(&self.0)) {
+        if self.0.iter().all(|needle| value.into_iter()
+            .any(|candidate| candidate.eq(needle))) {
             CheckResult::Pass
         } else {
             CheckResult::Fail(format!(
@@ -88,5 +104,14 @@ mod tests {
 
         // Expect the to_contain_equal_to expectation to fail with a different value
         expect(value).to_contain_equal_to(2);
+    }
+
+    #[test]
+    pub fn that_order_of_items_is_insignificant_for_contains_all_of() {
+        // Given a vector with multiple values
+        let value = vec![1, 3, 5, 7, 8, 9];
+
+        // Expect the to_contain_equal_to_all_of expectation to pass with values in different order
+        expect(value).to_contain_equal_to_all_of([5, 1]);
     }
 }
