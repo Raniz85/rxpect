@@ -3,7 +3,6 @@ use std::fmt::Debug;
 
 /// Extension trait for equality expectations
 pub trait EqualityExpectations<T> {
-
     /// Expect the value to equal another value
     /// ```
     /// # use rxpect::expect;

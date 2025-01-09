@@ -1,14 +1,15 @@
-use std::fmt::Debug;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
+use itertools::EitherOrBoth::Both;
+use itertools::Itertools;
+use std::fmt::Debug;
 
 /// Extension trait for equality expectations for iterables
 pub trait IterableItemEqualityExpectations<I, C>
 where
     I: Debug,
-    for <'a> &'a I: IntoIterator<Item=&'a C>,
+    for<'a> &'a I: IntoIterator<Item = &'a C>,
     C: PartialEq + Debug,
 {
-
     /// Expect an iterable to contain at least one value equal to another value
     /// ```
     /// # use rxpect::expect;
@@ -31,13 +32,25 @@ where
     /// expect(haystack).to_contain_equal_to_all_of(needles);
     /// ```
     /// asserts that `haystack` contains at least one item equal to each item in `needles`
-    fn to_contain_equal_to_all_of(self, values: impl IntoIterator<Item=C>) -> Self;
+    fn to_contain_equal_to_all_of(self, values: impl IntoIterator<Item = C>) -> Self;
+
+    /// Expect an iterable to be equivalent to another iterable
+    /// ```
+    /// # use rxpect::expect;
+    /// # use rxpect::expectations::IterableItemEqualityExpectations;
+    ///
+    /// let a = vec!["apple", "orange", "pear", "apple", "peach"];
+    /// let b = ["apple", "orange", "pear", "apple", "peach"];
+    /// expect(a).to_be_equivalent_to(b);
+    /// ```
+    /// asserts that `a` contains exactly one item equal to each item in `b`, in order
+    fn to_be_equivalent_to(self, values: impl IntoIterator<Item = C>) -> Self;
 }
 
 impl<'e, I, C, B> IterableItemEqualityExpectations<I, C> for B
 where
     I: Debug,
-    for <'a> &'a I: IntoIterator<Item=&'a C>,
+    for<'a> &'a I: IntoIterator<Item = &'a C>,
     C: PartialEq + Debug + 'e,
     B: ExpectationBuilder<'e, I>,
 {
@@ -45,28 +58,64 @@ where
         self.to_pass(ContainsEqualToExpectation(vec![value]))
     }
 
-    fn to_contain_equal_to_all_of(self, values: impl IntoIterator<Item=C>) -> Self {
+    fn to_contain_equal_to_all_of(self, values: impl IntoIterator<Item = C>) -> Self {
         self.to_pass(ContainsEqualToExpectation(values.into_iter().collect()))
+    }
+
+    fn to_be_equivalent_to(self, values: impl IntoIterator<Item = C>) -> Self {
+        self.to_pass(IterableIsEquivalentToExpectation(
+            values.into_iter().collect(),
+        ))
     }
 }
 
-/// Expectation for to_equal
 struct ContainsEqualToExpectation<T>(Vec<T>);
+
+struct IterableIsEquivalentToExpectation<T>(Vec<T>);
 
 impl<I, C> Expectation<I> for ContainsEqualToExpectation<C>
 where
     I: Debug,
-    for <'a> &'a I: IntoIterator<Item=&'a C>,
+    for<'a> &'a I: IntoIterator<Item = &'a C>,
     C: PartialEq + Debug,
 {
     fn check(&self, value: &I) -> CheckResult {
-        if self.0.iter().all(|needle| value.into_iter()
-            .any(|candidate| candidate.eq(needle))) {
+        if self
+            .0
+            .iter()
+            .all(|needle| value.into_iter().any(|candidate| candidate.eq(needle)))
+        {
             CheckResult::Pass
         } else {
             CheckResult::Fail(format!(
-                "Expectation failed (expected == actual)\nexpected: `{:?}`\n  actual: `{:?}`",
-                &self.0, value
+                "Expectation failed (a ⊇ b)\na: `{:?}`\nb: `{:?}`",
+                value, self.0
+            ))
+        }
+    }
+}
+
+impl<I, C> Expectation<I> for IterableIsEquivalentToExpectation<C>
+where
+    I: Debug,
+    for<'a> &'a I: IntoIterator<Item = &'a C>,
+    C: PartialEq + Debug,
+{
+    fn check(&self, value: &I) -> CheckResult {
+        if self
+            .0
+            .iter()
+            .zip_longest(value.into_iter())
+            .all(|pair| match pair {
+                Both(a, b) => a.eq(b),
+                _ => false,
+            })
+        {
+            CheckResult::Pass
+        } else {
+            CheckResult::Fail(format!(
+                "Expectation failed (a == b)\na: `{:?}`\nb: `{:?}`",
+                value, self.0
             ))
         }
     }
@@ -76,6 +125,7 @@ where
 mod tests {
     use super::IterableItemEqualityExpectations;
     use crate::expect;
+    use rstest::rstest;
 
     #[test]
     pub fn that_singleton_vec_contains_the_one_item() {
@@ -98,12 +148,21 @@ mod tests {
 
     #[test]
     #[should_panic]
-    pub fn that_inequal_values_are_not_considered_contained() {
-        // Given a value that implements PartialEq
+    pub fn that_unequal_values_are_not_considered_contained() {
+        // Given a vec with a value that implements PartialEq
         let value = vec![1];
 
         // Expect the to_contain_equal_to expectation to fail with a different value
         expect(value).to_contain_equal_to(2);
+    }
+
+    #[test]
+    pub fn thaht_empty_list_is_contained() {
+        // Given a vec with a value that implements PartialEq
+        let value = vec![1];
+
+        // Expect the to_contain_equal_to_all_of expectation to pass with an empty list
+        expect(value).to_contain_equal_to_all_of([]);
     }
 
     #[test]
@@ -113,5 +172,22 @@ mod tests {
 
         // Expect the to_contain_equal_to_all_of expectation to pass with values in different order
         expect(value).to_contain_equal_to_all_of([5, 1]);
+    }
+
+    #[rstest]
+    #[case(vec![5, 1])]
+    #[case(vec![1, 3, 5, 7, 8])]
+    #[case(vec![3, 5, 7, 8, 9])]
+    #[case(vec![1, 5, 3, 7, 8, 9])]
+    #[case(vec![9, 8, 7, 5, 3, 1])]
+    #[should_panic]
+    pub fn that_nonequivalent_collections_are_not_considered_equal(
+        #[case] non_equivalent: Vec<u32>,
+    ) {
+        // Given a vector with multiple values
+        let value = vec![1, 3, 5, 7, 8, 9];
+
+        // Expect the to_be_equivalent_to expectation to fail with an unequal collection
+        expect(value).to_be_equivalent_to(non_equivalent);
     }
 }

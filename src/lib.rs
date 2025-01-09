@@ -41,8 +41,8 @@
 //! expected: `3`
 //! actual: `2`'
 //! ```
-pub mod expectations;
 mod expectation_list;
+pub mod expectations;
 mod projection;
 mod root;
 

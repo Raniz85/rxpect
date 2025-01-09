@@ -1,9 +1,8 @@
-use std::fmt::Debug;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
+use std::fmt::Debug;
 
 /// Extension trait for ordering expectations
 pub trait OrderExpectations<T> {
-
     /// Expect the value to be less than another value
     /// ```
     /// # use rxpect::expect;
@@ -66,7 +65,7 @@ where
         self.to_pass(OrderExpectation {
             operator_fn: PartialOrd::lt,
             operator_char: '<',
-            operand: value
+            operand: value,
         })
     }
 
@@ -74,16 +73,15 @@ where
         self.to_pass(OrderExpectation {
             operator_fn: PartialOrd::le,
             operator_char: '≤',
-            operand: value
+            operand: value,
         })
     }
-
 
     fn to_be_greater_than(self, value: T) -> Self {
         self.to_pass(OrderExpectation {
             operator_fn: PartialOrd::gt,
             operator_char: '>',
-            operand: value
+            operand: value,
         })
     }
 
@@ -91,7 +89,7 @@ where
         self.to_pass(OrderExpectation {
             operator_fn: PartialOrd::ge,
             operator_char: '≥',
-            operand: value
+            operand: value,
         })
     }
 }

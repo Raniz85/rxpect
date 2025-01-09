@@ -3,7 +3,6 @@ use crate::{CheckResult, Expectation, ExpectationBuilder};
 
 /// Extension trait for boolean expectations
 pub trait BooleanExpectations {
-
     /// Expect the value to be true
     /// ```
     /// # use rxpect::expect;
@@ -55,4 +54,3 @@ impl Expectation<bool> for BooleanEqualityExpectation {
         }
     }
 }
-
