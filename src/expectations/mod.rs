@@ -7,6 +7,9 @@ pub use order::*;
 mod boolean;
 pub use boolean::*;
 
+mod result;
+pub use result::*;
+
 #[cfg(feature = "iterables")]
 mod iterables;
 #[cfg(feature = "iterables")]
