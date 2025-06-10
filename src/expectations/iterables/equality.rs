@@ -43,7 +43,7 @@ where
     /// let b = ["apple", "orange", "pear", "apple", "peach"];
     /// expect(a).to_be_equivalent_to(b);
     /// ```
-    /// asserts that `a` contains exactly one item equal to each item in `b`, in order
+    /// asserts that `a` contains exactly the same items in the same order as `b`
     fn to_be_equivalent_to(self, values: impl IntoIterator<Item = C>) -> Self;
 }
 
