@@ -1,13 +1,13 @@
+use crate::expectation_list::ExpectationList;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
-use crate::expectation_list::ExpectationList;
 
 /// Extension trait for Result expectations
 pub trait ResultExpectations<T, E>
 where
     T: Debug,
     E: Debug,
-    {
+{
     /// Expect the Result to be Ok
     /// ```
     /// # use rxpect::expect;
@@ -58,13 +58,12 @@ where
 }
 
 pub trait ProjectedResultExpectations<'e, T, E, TB, EB>
-    where
-        T: Debug + 'e,
-        E: Debug + 'e,
-        TB: ExpectationBuilder<'e, T>,
-        EB: ExpectationBuilder<'e, E>,
+where
+    T: Debug + 'e,
+    E: Debug + 'e,
+    TB: ExpectationBuilder<'e, T>,
+    EB: ExpectationBuilder<'e, E>,
 {
-
     /// Expect the Result to be Ok and then chain into further expectations
     /// ```
     /// # use rxpect::expect;
@@ -116,13 +115,17 @@ where
         self.to_pass(IsErrMatchingExpectation(predicate))
     }
 }
-impl<'e, T, E, B> ProjectedResultExpectations<'e, T, E, ExpectationList<'e, T>, ExpectationList<'e, E>> for B
+impl<'e, T, E, B>
+    ProjectedResultExpectations<'e, T, E, ExpectationList<'e, T>, ExpectationList<'e, E>> for B
 where
     T: Debug + 'e,
     E: Debug + 'e,
     B: ExpectationBuilder<'e, Result<T, E>>,
 {
-    fn to_be_ok_and(self, config: impl FnOnce(ExpectationList<'e, T>) -> ExpectationList<'e, T>) -> Self {
+    fn to_be_ok_and(
+        self,
+        config: impl FnOnce(ExpectationList<'e, T>) -> ExpectationList<'e, T>,
+    ) -> Self {
         let expectations = config(ExpectationList::new());
         self.to_pass(ResultOkProjectionExpectation {
             expectations,
@@ -130,7 +133,10 @@ where
         })
     }
 
-    fn to_be_err_and(self, config: impl FnOnce(ExpectationList<'e, E>) -> ExpectationList<'e, E>) -> Self {
+    fn to_be_err_and(
+        self,
+        config: impl FnOnce(ExpectationList<'e, E>) -> ExpectationList<'e, E>,
+    ) -> Self {
         let expectations = config(ExpectationList::new());
         self.to_pass(ResultErrProjectionExpectation {
             expectations,
@@ -145,12 +151,12 @@ struct ResultOkProjectionExpectation<'e, T, E> {
     _phantom: std::marker::PhantomData<E>,
 }
 
-impl<'e, T: Debug + 'e, E: Debug> Expectation<Result<T, E>> for ResultOkProjectionExpectation<'e, T, E> {
+impl<'e, T: Debug + 'e, E: Debug> Expectation<Result<T, E>>
+    for ResultOkProjectionExpectation<'e, T, E>
+{
     fn check(&self, value: &Result<T, E>) -> CheckResult {
         match value {
-            Ok(ok_value) => {
-                self.expectations.check(ok_value)
-            }
+            Ok(ok_value) => self.expectations.check(ok_value),
             Err(e) => CheckResult::Fail(format!(
                 "Expectation failed (expected Ok)\n  actual: Err({:?})",
                 e
@@ -165,12 +171,15 @@ struct ResultErrProjectionExpectation<'e, T, E> {
     _phantom: std::marker::PhantomData<T>,
 }
 
-impl<'e, T: Debug + 'e, E: Debug> Expectation<Result<T, E>> for ResultErrProjectionExpectation<'e, T, E> {
+impl<'e, T: Debug + 'e, E: Debug> Expectation<Result<T, E>>
+    for ResultErrProjectionExpectation<'e, T, E>
+{
     fn check(&self, value: &Result<T, E>) -> CheckResult {
         match value {
             Ok(value) => CheckResult::Fail(format!(
                 "Expectation failed (expected Err)\n  actual: Ok({:?})",
-                value)),
+                value
+            )),
             Err(err) => self.expectations.check(err),
         }
     }

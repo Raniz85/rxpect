@@ -10,6 +10,9 @@ pub use boolean::*;
 mod result;
 pub use result::*;
 
+mod option;
+pub use option::*;
+
 #[cfg(feature = "iterables")]
 mod iterables;
 #[cfg(feature = "iterables")]
