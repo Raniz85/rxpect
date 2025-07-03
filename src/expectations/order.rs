@@ -1,6 +1,6 @@
-use crate::{CheckResult, Expectation, ExpectationBuilder};
+use crate::expectations::predicate::PredicateExpectation;
+use crate::ExpectationBuilder;
 use std::fmt::Debug;
-use std::marker::PhantomData;
 use std::ops::RangeBounds;
 
 /// Extension trait for ordering expectations
@@ -86,83 +86,51 @@ where
     B: ExpectationBuilder<'e, T>,
 {
     fn to_be_less_than(self, value: T) -> Self {
-        self.to_pass(OrderExpectation {
-            operator_fn: PartialOrd::lt,
-            operator_char: '<',
-            operand: value,
-        })
+        self.to_pass(PredicateExpectation::new(
+            value,
+            |a: &T, b: &T| a.lt(b),
+            |a: &T, b: &T| format!("Expectation failed (a < b)\na: `{:?}`\nb: `{:?}`", b, a),
+        ))
     }
 
     fn to_be_less_than_or_equal(self, value: T) -> Self {
-        self.to_pass(OrderExpectation {
-            operator_fn: PartialOrd::le,
-            operator_char: '≤',
-            operand: value,
-        })
+        self.to_pass(PredicateExpectation::new(
+            value,
+            |a: &T, b: &T| a.le(b),
+            |a: &T, b: &T| format!("Expectation failed (a ≤ b)\na: `{:?}`\nb: `{:?}`", b, a),
+        ))
     }
 
     fn to_be_greater_than(self, value: T) -> Self {
-        self.to_pass(OrderExpectation {
-            operator_fn: PartialOrd::gt,
-            operator_char: '>',
-            operand: value,
-        })
+        self.to_pass(PredicateExpectation::new(
+            value,
+            |a: &T, b: &T| a.gt(b),
+            |a: &T, b: &T| format!("Expectation failed (a > b)\na: `{:?}`\nb: `{:?}`", b, a),
+        ))
     }
 
     fn to_be_greater_than_or_equal(self, value: T) -> Self {
-        self.to_pass(OrderExpectation {
-            operator_fn: PartialOrd::ge,
-            operator_char: '≥',
-            operand: value,
-        })
+        self.to_pass(PredicateExpectation::new(
+            value,
+            |a: &T, b: &T| a.ge(b),
+            |a: &T, b: &T| format!("Expectation failed (a ≥ b)\na: `{:?}`\nb: `{:?}`", b, a),
+        ))
     }
 
     fn to_be_inside<R: RangeBounds<T> + Debug + 'e>(self, range: R) -> Self {
-        self.to_pass(InsideRangeExpectation(range, Default::default()))
+        self.to_pass(PredicateExpectation::new(
+            range,
+            |value: &T, range: &R| range.contains(value),
+            |value: &T, range: &R| {
+                format!(
+                    "Expectation failed (value ∈ range)\nvalue:`{:?}`\nrange:`{:?}`",
+                    value, range
+                )
+            },
+        ))
     }
 }
 
-/// Expectation for to_equal
-struct OrderExpectation<T> {
-    operator_fn: fn(&T, &T) -> bool,
-    operator_char: char,
-    operand: T,
-}
-
-impl<T: PartialOrd + Debug> Expectation<T> for OrderExpectation<T> {
-    fn check(&self, value: &T) -> CheckResult {
-        if (self.operator_fn)(value, &self.operand) {
-            CheckResult::Pass
-        } else {
-            CheckResult::Fail(format!(
-                "Expectation failed (a {} b)\na: `{:?}`\nb: `{:?}`",
-                self.operator_char, &self.operand, value
-            ))
-        }
-    }
-}
-
-struct InsideRangeExpectation<R, T>(R, PhantomData<T>)
-where
-    T: PartialOrd + Debug,
-    R: RangeBounds<T> + Debug;
-
-impl<R, T> Expectation<T> for InsideRangeExpectation<R, T>
-where
-    T: PartialOrd + Debug,
-    R: RangeBounds<T> + Debug,
-{
-    fn check(&self, value: &T) -> CheckResult {
-        if self.0.contains(value) {
-            CheckResult::Pass
-        } else {
-            CheckResult::Fail(format!(
-                "Expectation failed (value ∈ range)\nvalue:`{:?}`\nrange:`{:?}`",
-                value, self.0
-            ))
-        }
-    }
-}
 #[cfg(test)]
 mod tests {
     use super::OrderExpectations;
