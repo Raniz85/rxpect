@@ -1,4 +1,5 @@
 use crate::expectation_list::ExpectationList;
+use crate::expectations::predicate::PredicateExpectation;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
@@ -94,11 +95,19 @@ where
     B: ExpectationBuilder<'e, Result<T, E>>,
 {
     fn to_be_ok(self) -> Self {
-        self.to_pass(IsOkExpectation)
+        self.to_pass(PredicateExpectation::new(
+            (),
+            |value: &Result<T, E>, _| value.is_ok(),
+            |value: &Result<T, E>, _| format!("Expectation failed (expected Ok)\n  actual: {:?}", value)
+        ))
     }
 
     fn to_be_err(self) -> Self {
-        self.to_pass(IsErrExpectation)
+        self.to_pass(PredicateExpectation::new(
+            (),
+            |value: &Result<T, E>, _| value.is_err(),
+            |value: &Result<T, E>, _| format!("Expectation failed (expected Err)\n  actual: {:?}", value)
+        ))
     }
 
     fn to_be_ok_matching<F>(self, predicate: F) -> Self
@@ -181,36 +190,6 @@ impl<'e, T: Debug + 'e, E: Debug> Expectation<Result<T, E>>
                 value
             )),
             Err(err) => self.expectations.check(err),
-        }
-    }
-}
-
-/// Expectation for to_be_ok
-struct IsOkExpectation;
-
-impl<T: Debug, E: Debug> Expectation<Result<T, E>> for IsOkExpectation {
-    fn check(&self, value: &Result<T, E>) -> CheckResult {
-        match value {
-            Ok(_) => CheckResult::Pass,
-            Err(e) => CheckResult::Fail(format!(
-                "Expectation failed (expected Ok)\n  actual: Err({:?})",
-                e
-            )),
-        }
-    }
-}
-
-/// Expectation for to_be_err
-struct IsErrExpectation;
-
-impl<T: Debug, E: Debug> Expectation<Result<T, E>> for IsErrExpectation {
-    fn check(&self, value: &Result<T, E>) -> CheckResult {
-        match value {
-            Err(_) => CheckResult::Pass,
-            Ok(v) => CheckResult::Fail(format!(
-                "Expectation failed (expected Err)\n  actual: Ok({:?})",
-                v
-            )),
         }
     }
 }
