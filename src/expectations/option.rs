@@ -1,4 +1,5 @@
 use crate::expectation_list::ExpectationList;
+use crate::expectations::predicate::PredicateExpectation;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
@@ -66,11 +67,19 @@ where
     B: ExpectationBuilder<'e, Option<T>>,
 {
     fn to_be_some(self) -> Self {
-        self.to_pass(IsSomeExpectation)
+        self.to_pass(PredicateExpectation::new(
+            (),
+            |value: &Option<T>, _| value.is_some(),
+            |_: &Option<T>, _| "Expectation failed (expected Some)\n  actual: None".to_string(),
+        ))
     }
 
     fn to_be_none(self) -> Self {
-        self.to_pass(IsNoneExpectation)
+        self.to_pass(PredicateExpectation::new(
+            (),
+            |value: &Option<T>, _| value.is_none(),
+            |value: &Option<T>, _| format!("Expectation failed (expected None)\n  actual: {:?}", value)
+        ))
     }
 
     fn to_be_some_matching<F>(self, predicate: F) -> Self
@@ -111,35 +120,6 @@ impl<'e, T: Debug + 'e> Expectation<Option<T>> for OptionSomeProjectionExpectati
             None => {
                 CheckResult::Fail("Expectation failed (expected Some)\n  actual: None".to_string())
             }
-        }
-    }
-}
-
-/// Expectation for to_be_some
-struct IsSomeExpectation;
-
-impl<T: Debug> Expectation<Option<T>> for IsSomeExpectation {
-    fn check(&self, value: &Option<T>) -> CheckResult {
-        match value {
-            Some(_) => CheckResult::Pass,
-            None => {
-                CheckResult::Fail("Expectation failed (expected Some)\n  actual: None".to_string())
-            }
-        }
-    }
-}
-
-/// Expectation for to_be_none
-struct IsNoneExpectation;
-
-impl<T: Debug> Expectation<Option<T>> for IsNoneExpectation {
-    fn check(&self, value: &Option<T>) -> CheckResult {
-        match value {
-            None => CheckResult::Pass,
-            Some(v) => CheckResult::Fail(format!(
-                "Expectation failed (expected None)\n  actual: Some({:?})",
-                v
-            )),
         }
     }
 }
