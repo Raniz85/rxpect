@@ -1,5 +1,5 @@
 use crate::expectations::EqualityExpectations;
-use crate::{CheckResult, Expectation, ExpectationBuilder};
+use crate::ExpectationBuilder;
 
 /// Extension trait for boolean expectations
 pub trait BooleanExpectations {
@@ -31,26 +31,10 @@ where
     B: ExpectationBuilder<'e, bool> + EqualityExpectations<bool>,
 {
     fn to_be_true(self) -> Self {
-        self.to_pass(BooleanEqualityExpectation(true))
+        self.to_equal(true)
     }
 
     fn to_be_false(self) -> Self {
-        self.to_pass(BooleanEqualityExpectation(false))
-    }
-}
-
-/// Expectation for to_be_true/false
-struct BooleanEqualityExpectation(bool);
-
-impl Expectation<bool> for BooleanEqualityExpectation {
-    fn check(&self, value: &bool) -> CheckResult {
-        if self.0.eq(value) {
-            CheckResult::Pass
-        } else {
-            CheckResult::Fail(format!(
-                "Expectation failed (expected == actual)\nexpected: `{:?}`\n  actual: `{:?}`",
-                &self.0, value
-            ))
-        }
+        self.to_equal(false)
     }
 }
