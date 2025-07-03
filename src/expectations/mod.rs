@@ -15,5 +15,7 @@ pub use option::*;
 
 #[cfg(feature = "iterables")]
 mod iterables;
+mod string;
+
 #[cfg(feature = "iterables")]
 pub use iterables::*;
