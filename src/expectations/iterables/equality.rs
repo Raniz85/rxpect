@@ -45,6 +45,21 @@ where
     /// ```
     /// asserts that `a` contains exactly the same items in the same order as `b`
     fn to_be_equivalent_to(self, values: impl IntoIterator<Item = C>) -> Self;
+
+    /// Expect an iterable to be equivalent to another iterable, ignoring the order of items
+    /// ```
+    /// # use rxpect::expect;
+    /// # use rxpect::expectations::IterableItemEqualityExpectations;
+    ///
+    /// let a = vec!["apple", "orange", "pear", "apple", "peach"];
+    /// let b = ["orange", "peach", "apple", "apple", "pear"];
+    /// let c = ["peach", "apple", "pear", "orange", "apple"];
+    /// expect(a.clone()).to_be_equivalent_to_in_any_order(b);
+    /// expect(a).to_be_equivalent_to_in_any_order(c);
+    /// expect(b).to_be_equivalent_to_in_any_order(c);
+    /// ```
+    /// asserts that `a` contains exactly the same items in the same order as `b`
+    fn to_be_equivalent_to_in_any_order(self, values: impl IntoIterator<Item = C>) -> Self;
 }
 
 impl<'e, I, C, B> IterableItemEqualityExpectations<I, C> for B
@@ -67,11 +82,19 @@ where
             values.into_iter().collect(),
         ))
     }
+
+    fn to_be_equivalent_to_in_any_order(self, values: impl IntoIterator<Item = C>) -> Self {
+        self.to_pass(IterableIsEquivalentToInAnyOrderExpectation(
+            values.into_iter().collect(),
+        ))
+    }
 }
 
 struct ContainsEqualToExpectation<T>(Vec<T>);
 
 struct IterableIsEquivalentToExpectation<T>(Vec<T>);
+
+struct IterableIsEquivalentToInAnyOrderExpectation<T>(Vec<T>);
 
 impl<I, C> Expectation<I> for ContainsEqualToExpectation<C>
 where
@@ -116,6 +139,35 @@ where
             CheckResult::Fail(format!(
                 "Expectation failed (a == b)\na: `{:?}`\nb: `{:?}`",
                 value, self.0
+            ))
+        }
+    }
+}
+
+impl<I, C> Expectation<I> for IterableIsEquivalentToInAnyOrderExpectation<C>
+where
+    I: Debug,
+    for<'a> &'a I: IntoIterator<Item = &'a C>,
+    C: PartialEq + Debug,
+{
+    fn check(&self, value: &I) -> CheckResult {
+        let mut remaining: Vec<&C> = self.0.iter().collect();
+        let mut extras: Vec<&C> = Vec::new();
+        for actual in value.into_iter() {
+            if let Some(pos) = remaining.iter().position(|e| (*e).eq(actual)) {
+                // Remove matched item; swap_remove is O(1)
+                remaining.swap_remove(pos);
+            } else {
+                // No match found for this actual item; record as extra and continue
+                extras.push(actual);
+            }
+        }
+        if remaining.is_empty() && extras.is_empty() {
+            CheckResult::Pass
+        } else {
+            CheckResult::Fail(format!(
+                "Expectation failed (a ≅ b, any order)\na: `{:?}`\nb: `{:?}`\nextra: `{:?}`\nunmatched: `{:?}`",
+                value, self.0, extras, remaining
             ))
         }
     }
@@ -189,5 +241,40 @@ mod tests {
 
         // Expect the to_be_equivalent_to expectation to fail with an unequal collection
         expect(value).to_be_equivalent_to(non_equivalent);
+    }
+
+    #[rstest]
+    #[case(vec![1, 1, 3, 5, 7, 8, 3, 9])]
+    #[case(vec![1, 3, 1, 5, 7, 8, 3, 9])]
+    #[case(vec![9, 3, 8, 7, 5, 3, 1, 1])]
+    #[case(vec![7, 3, 1, 9, 1, 3, 8, 5])]
+    pub fn that_equivalent_collections_are_considered_equivalent_regardless_of_order(
+        #[case] non_equivalent: Vec<u32>,
+    ) {
+        // Given a vector with multiple values
+        let value = vec![1, 1, 3, 5, 7, 8, 3, 9];
+
+        // Expect the to_be_equivalent_to expectation to pass with an unequal collection
+        expect(value).to_be_equivalent_to_in_any_order(non_equivalent);
+    }
+
+    #[rstest]
+    #[case(vec![5, 1])]
+    #[case(vec![1, 3, 5, 7, 8])]
+    #[case(vec![3, 5, 7, 8, 9])]
+    #[case(vec![1, 5, 3, 7, 8, 9])]
+    #[case(vec![1, 3, 3, 5, 7, 8, 3, 9])]
+    #[case(vec![1, 1, 1, 5, 7, 8, 3, 9])]
+    #[case(vec![1, 1, 3, 7, 7, 8, 3, 9])]
+    #[case(vec![1, 1, 3, 6, 7, 8, 3, 9])]
+    #[should_panic]
+    pub fn that_nonequivalent_collections_are_not_considered_equal_regardless_of_order(
+        #[case] non_equivalent: Vec<u32>,
+    ) {
+        // Given a vector with multiple values
+        let value = vec![1, 1, 3, 5, 7, 8, 3, 9];
+
+        // Expect the to_be_equivalent_to expectation to fail with an unequal collection
+        expect(value).to_be_equivalent_to_in_any_order(non_equivalent);
     }
 }
