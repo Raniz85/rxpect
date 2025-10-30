@@ -1,6 +1,6 @@
-use std::fmt::Debug;
-use crate::{CheckResult, ExpectProjection, Expectation, ExpectationBuilder};
 use crate::expectation_list::ExpectationList;
+use crate::{CheckResult, ExpectProjection, Expectation, ExpectationBuilder};
+use std::fmt::Debug;
 
 /// Extension trait for equality expectations for iterables
 pub trait IterableCountExpectations<'e, I, C>
@@ -80,14 +80,16 @@ struct EmtpyExpectation;
 impl<I, C> Expectation<I> for EmtpyExpectation
 where
     I: Debug,
-    for<'a> &'a I: IntoIterator<Item = &'a C> ,
-    C: Debug
+    for<'a> &'a I: IntoIterator<Item = &'a C>,
+    C: Debug,
 {
     fn check(&self, value: &I) -> CheckResult {
         if value.into_iter().next().is_none() {
             CheckResult::Pass
         } else {
-            CheckResult::Fail("Expected iterable to be empty, but it had at least one item".to_string())
+            CheckResult::Fail(
+                "Expected iterable to be empty, but it had at least one item".to_string(),
+            )
         }
     }
 }
@@ -97,8 +99,8 @@ struct NotEmtpyExpectation;
 impl<I, C> Expectation<I> for NotEmtpyExpectation
 where
     I: Debug,
-    for<'a> &'a I: IntoIterator<Item = &'a C> ,
-    C: Debug
+    for<'a> &'a I: IntoIterator<Item = &'a C>,
+    C: Debug,
 {
     fn check(&self, value: &I) -> CheckResult {
         if value.into_iter().next().is_some() {
@@ -113,7 +115,7 @@ where
 mod tests {
     use super::IterableCountExpectations;
     use crate::expect;
-    use crate::expectations::{EqualityExpectations, OrderExpectations};
+    use crate::expectations::EqualityExpectations;
     use rstest::rstest;
 
     #[test]

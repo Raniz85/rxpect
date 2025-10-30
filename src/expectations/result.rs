@@ -98,7 +98,9 @@ where
         self.to_pass(PredicateExpectation::new(
             (),
             |value: &Result<T, E>, _| value.is_ok(),
-            |value: &Result<T, E>, _| format!("Expectation failed (expected Ok)\n  actual: {:?}", value)
+            |value: &Result<T, E>, _| {
+                format!("Expectation failed (expected Ok)\n  actual: {:?}", value)
+            },
         ))
     }
 
@@ -106,7 +108,9 @@ where
         self.to_pass(PredicateExpectation::new(
             (),
             |value: &Result<T, E>, _| value.is_err(),
-            |value: &Result<T, E>, _| format!("Expectation failed (expected Err)\n  actual: {:?}", value)
+            |value: &Result<T, E>, _| {
+                format!("Expectation failed (expected Err)\n  actual: {:?}", value)
+            },
         ))
     }
 

@@ -78,7 +78,9 @@ where
         self.to_pass(PredicateExpectation::new(
             (),
             |value: &Option<T>, _| value.is_none(),
-            |value: &Option<T>, _| format!("Expectation failed (expected None)\n  actual: {:?}", value)
+            |value: &Option<T>, _| {
+                format!("Expectation failed (expected None)\n  actual: {:?}", value)
+            },
         ))
     }
 

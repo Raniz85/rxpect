@@ -125,15 +125,10 @@ where
     C: PartialEq + Debug,
 {
     fn check(&self, value: &I) -> CheckResult {
-        if self
-            .0
-            .iter()
-            .zip_longest(value.into_iter())
-            .all(|pair| match pair {
-                Both(a, b) => a.eq(b),
-                _ => false,
-            })
-        {
+        if self.0.iter().zip_longest(value).all(|pair| match pair {
+            Both(a, b) => a.eq(b),
+            _ => false,
+        }) {
             CheckResult::Pass
         } else {
             CheckResult::Fail(format!(
