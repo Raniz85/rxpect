@@ -43,7 +43,7 @@ impl<'e, T: Debug> Drop for RootExpectations<'e, T> {
 #[cfg(test)]
 mod tests {
     use crate::tests::TestExpectation;
-    use crate::{expect, CheckResult, ExpectationBuilder};
+    use crate::{CheckResult, ExpectationBuilder, expect};
 
     #[test]
     pub fn that_assert_runs_an_expectation() {

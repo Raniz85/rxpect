@@ -1,5 +1,5 @@
-use crate::expectations::predicate::PredicateExpectation;
 use crate::ExpectationBuilder;
+use crate::expectations::predicate::PredicateExpectation;
 use std::fmt::Debug;
 use std::ops::RangeBounds;
 

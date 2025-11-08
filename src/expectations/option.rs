@@ -152,8 +152,8 @@ impl<T: Debug, F: Fn(&T) -> bool> Expectation<Option<T>> for IsSomeMatchingExpec
 #[cfg(test)]
 mod tests {
     use crate::expect;
-    use crate::expectations::option::{OptionExpectations, ProjectedOptionExpectations};
     use crate::expectations::EqualityExpectations;
+    use crate::expectations::option::{OptionExpectations, ProjectedOptionExpectations};
 
     #[test]
     pub fn that_to_be_some_accepts_some_values() {

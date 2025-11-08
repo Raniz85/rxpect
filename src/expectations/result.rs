@@ -253,8 +253,8 @@ impl<T: Debug, E: Debug, F: Fn(&E) -> bool> Expectation<Result<T, E>>
 #[cfg(test)]
 mod tests {
     use crate::expect;
-    use crate::expectations::result::{ProjectedResultExpectations, ResultExpectations};
     use crate::expectations::EqualityExpectations;
+    use crate::expectations::result::{ProjectedResultExpectations, ResultExpectations};
 
     #[test]
     pub fn that_to_be_ok_accepts_ok_values() {

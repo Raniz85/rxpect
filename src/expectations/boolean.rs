@@ -1,5 +1,5 @@
-use crate::expectations::EqualityExpectations;
 use crate::ExpectationBuilder;
+use crate::expectations::EqualityExpectations;
 
 /// Extension trait for boolean expectations
 pub trait BooleanExpectations {

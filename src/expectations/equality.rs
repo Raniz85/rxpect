@@ -43,7 +43,8 @@ struct ToEqualExpectation<U>(U);
 impl<T, U> Expectation<T> for ToEqualExpectation<U>
 where
     T: PartialEq<U> + Debug,
-    U: Debug {
+    U: Debug,
+{
     fn check(&self, value: &T) -> CheckResult {
         if value.eq(&self.0) {
             CheckResult::Pass
@@ -58,10 +59,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::fmt::Debug;
-    use rstest::rstest;
-    use super::{EqualityExpectations, ToEqualExpectation};
+    use super::EqualityExpectations;
     use crate::expect;
+    use rstest::rstest;
+    use std::fmt::Debug;
 
     #[rstest]
     #[case(1, 1)]
@@ -69,8 +70,10 @@ mod tests {
     #[case("String".to_string(), "String".to_string())]
     #[case("String and &str".to_string(), "String and &str")]
     pub fn that_to_equal_accepts_equal_values<T, U>(#[case] a: T, #[case] b: U)
-        where T: PartialEq<U> + Debug,
-            U: Debug {
+    where
+        T: PartialEq<U> + Debug,
+        U: Debug,
+    {
         // Expect the two values to be equal
         expect(a).to_equal(b);
     }

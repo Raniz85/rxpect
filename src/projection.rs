@@ -87,7 +87,7 @@ mod tests {
     use crate::expectation_list::ExpectationList;
     use crate::projection::ProjectedExpectations;
     use crate::tests::TestExpectation;
-    use crate::{expect, CheckResult, ExpectProjection, Expectation, ExpectationBuilder};
+    use crate::{CheckResult, ExpectProjection, Expectation, ExpectationBuilder, expect};
 
     #[test]
     pub fn that_projection_runs_all_expectations() {
