@@ -2,7 +2,7 @@ use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
 /// Extension trait for equality expectations
-pub trait EqualityExpectations<T> {
+pub trait EqualityExpectations<T, U> {
     /// Expect the value to equal another value
     /// ```
     /// # use rxpect::expect;
@@ -12,26 +12,40 @@ pub trait EqualityExpectations<T> {
     /// let b = "foo";
     /// expect(a).to_equal(b);
     /// ```
+    ///
+    /// It works with differing types as well, as well as T: Eq<U> holds true
+    /// ```
+    /// # use rxpect::expect;
+    /// # use rxpect::expectations::EqualityExpectations;
+    ///
+    /// let a = "foo".to_string();
+    /// let b = "foo";
+    /// expect(a).to_equal(b);
+    /// ```
     /// asserts that `b.eq(a)` is true
-    fn to_equal(self, value: T) -> Self;
+    fn to_equal(self, value: U) -> Self;
 }
 
-impl<'e, T, B> EqualityExpectations<T> for B
+impl<'e, T, U, B> EqualityExpectations<T, U> for B
 where
-    T: PartialEq + Debug + 'e,
+    T: PartialEq<U> + Debug + 'e,
+    U: Debug + 'e,
     B: ExpectationBuilder<'e, T>,
 {
-    fn to_equal(self, value: T) -> Self {
+    fn to_equal(self, value: U) -> Self {
         self.to_pass(ToEqualExpectation(value))
     }
 }
 
 /// Expectation for to_equal
-struct ToEqualExpectation<T>(T);
+struct ToEqualExpectation<U>(U);
 
-impl<T: PartialEq + Debug> Expectation<T> for ToEqualExpectation<T> {
+impl<T, U> Expectation<T> for ToEqualExpectation<U>
+where
+    T: PartialEq<U> + Debug,
+    U: Debug {
     fn check(&self, value: &T) -> CheckResult {
-        if self.0.eq(value) {
+        if value.eq(&self.0) {
             CheckResult::Pass
         } else {
             CheckResult::Fail(format!(
@@ -44,16 +58,21 @@ impl<T: PartialEq + Debug> Expectation<T> for ToEqualExpectation<T> {
 
 #[cfg(test)]
 mod tests {
-    use super::EqualityExpectations;
+    use std::fmt::Debug;
+    use rstest::rstest;
+    use super::{EqualityExpectations, ToEqualExpectation};
     use crate::expect;
 
-    #[test]
-    pub fn that_to_equal_accepts_equal_values() {
-        // Given a value that implements PartialEq
-        let value = 1;
-
-        // Expect the to_equal expectation to pass with an identical value
-        expect(value).to_equal(1);
+    #[rstest]
+    #[case(1, 1)]
+    #[case("&str", "&str")]
+    #[case("String".to_string(), "String".to_string())]
+    #[case("String and &str".to_string(), "String and &str")]
+    pub fn that_to_equal_accepts_equal_values<T, U>(#[case] a: T, #[case] b: U)
+        where T: PartialEq<U> + Debug,
+            U: Debug {
+        // Expect the two values to be equal
+        expect(a).to_equal(b);
     }
 
     #[test]
