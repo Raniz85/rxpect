@@ -41,12 +41,14 @@
 //! expected: `3`
 //! actual: `2`'
 //! ```
-mod expectation_list;
+pub mod borrow;
+pub mod expectation_list;
 pub mod expectations;
 mod projection;
 mod root;
 
 pub use projection::ExpectProjection;
+pub use projection::ProjectedExpectationsBuilder;
 pub use root::RootExpectations;
 use std::fmt::Debug;
 

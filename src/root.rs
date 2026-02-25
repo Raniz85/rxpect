@@ -1,21 +1,8 @@
+use crate::borrow::BorrowedOrOwned;
 use crate::expectation_list::ExpectationList;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::borrow::Borrow;
 use std::fmt::Debug;
-
-enum BorrowedOrOwned<'e, T> {
-    Borrowed(&'e T),
-    Owned(T),
-}
-
-impl<'e, T> Borrow<T> for BorrowedOrOwned<'e, T> {
-    fn borrow(&self) -> &T {
-        match self {
-            BorrowedOrOwned::Borrowed(reference) => reference,
-            BorrowedOrOwned::Owned(owned) => owned,
-        }
-    }
-}
 
 /// Container for expectations on a value.
 ///

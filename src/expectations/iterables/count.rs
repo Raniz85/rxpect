@@ -1,4 +1,3 @@
-use crate::expectation_list::ExpectationList;
 use crate::{CheckResult, ExpectProjection, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
@@ -19,13 +18,12 @@ where
     /// # use rxpect::expectations::OrderExpectations;
     ///
     /// let items = vec!["bar", "foo", "foo"];
-    /// expect(items).count(|count| count.to_be_greater_than_or_equal(2));
+    /// expect(items).count().to_be_greater_than_or_equal(2);
     /// ```
     /// asserts that `items` contains at least 2 items
-    fn count(
-        self,
-        config: impl FnOnce(ExpectationList<'e, usize>) -> ExpectationList<'e, usize>,
-    ) -> Self;
+    fn count(self) -> impl ExpectationBuilder<'e, usize>
+    where
+        Self: Sized;
 
     /// Expect an iterable to not be empty.
     ///
@@ -59,11 +57,11 @@ where
     C: Debug,
     B: ExpectationBuilder<'e, I>,
 {
-    fn count(
-        self,
-        config: impl FnOnce(ExpectationList<'e, usize>) -> ExpectationList<'e, usize>,
-    ) -> Self {
-        self.projected_by(|it| it.into_iter().count(), config)
+    fn count(self) -> impl ExpectationBuilder<'e, usize>
+    where
+        Self: Sized,
+    {
+        self.projected_by(|it: &I| it.into_iter().count())
     }
 
     fn to_not_be_empty(self) -> Self {
@@ -163,7 +161,7 @@ mod tests {
     #[case(vec![1, 2, 3])]
     pub fn that_count_projects_correctly(#[case] items: Vec<u32>) {
         let expected_count = items.len();
-        // Expect the length() projection to project the length of the iterable
-        expect(items).count(|count| count.to_equal(expected_count));
+        // Expect the count() projection to project the count of the iterable
+        expect(items).count().to_equal(expected_count);
     }
 }

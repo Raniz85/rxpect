@@ -1,49 +1,148 @@
+use crate::borrow::BorrowedOrOwned;
 use crate::expectation_list::ExpectationList;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
+use std::borrow::Borrow;
+use std::cell::RefCell;
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use std::rc::Rc;
 
-struct ProjectedExpectations<'e, F, T, U>
-where
-    F: Fn(&T) -> U,
-    T: Debug,
-    U: Debug + 'e,
-{
-    projection: F,
-    expectations: ExpectationList<'e, U>,
-    _t: PhantomData<&'e T>,
+/// Indent each line of a string by two spaces
+fn indent(message: String) -> String {
+    message
+        .lines()
+        .map(|line| "  ".to_string() + line)
+        .fold(String::new(), |a, b| a + &b + "\n")
+        .trim_end()
+        .to_owned()
 }
 
-impl<'e, F, T, U> Expectation<T> for ProjectedExpectations<'e, F, T, U>
+/// Expectations on a projected value.
+pub struct ProjectedExpectations<'e, T, U, F>
 where
-    F: (Fn(&T) -> U) + 'e,
     T: Debug,
     U: Debug + 'e,
+    F: for<'a> Fn(&'a T) -> Option<BorrowedOrOwned<'a, U>>,
+{
+    expectations: Rc<RefCell<ExpectationList<'e, U>>>,
+    extract: F,
+    fail_message: fn(&T) -> String,
+    _phantom: PhantomData<&'e (T, U)>,
+}
+
+impl<'e, T, U, F> ProjectedExpectations<'e, T, U, F>
+where
+    T: Debug,
+    U: Debug + 'e,
+    F: for<'a> Fn(&'a T) -> Option<BorrowedOrOwned<'a, U>>,
+{
+    /// Create  new `ProjectedExpectations` paired with its shared expectation list.
+    ///
+    /// When checked, `extract` is called: `Some` runs inner expectations on the extracted value,
+    /// `None` calls `fail_message` to produce the error string.
+    ///
+    /// # Returns
+    /// A tuple containing:
+    ///
+    /// * The `ProjectedExpectations`
+    /// * The `ExpectationList` so that more expectations can be added
+    pub fn new(
+        extract: F,
+        fail_message: fn(&T) -> String,
+    ) -> (Self, Rc<RefCell<ExpectationList<'e, U>>>) {
+        let expectations = Rc::new(RefCell::new(ExpectationList::new()));
+        (
+            Self {
+                expectations: expectations.clone(),
+                extract,
+                fail_message,
+                _phantom: PhantomData,
+            },
+            expectations,
+        )
+    }
+}
+
+impl<'e, T, U, F> Expectation<T> for ProjectedExpectations<'e, T, U, F>
+where
+    T: Debug,
+    U: Debug + 'e,
+    F: for<'a> Fn(&'a T) -> Option<BorrowedOrOwned<'a, U>>,
 {
     fn check(&self, value: &T) -> CheckResult {
-        let projected = (self.projection)(value);
-        match self.expectations.check(&projected) {
-            CheckResult::Fail(message) => CheckResult::Fail(
-                message
-                    .lines()
-                    .map(|line| "  ".to_string() + line)
-                    .fold(String::new(), |a, b| a + &b + "\n")
-                    .trim_end()
-                    .to_owned(),
-            ),
-            pass => pass,
+        match (self.extract)(value) {
+            Some(inner) => match (*self.expectations).borrow().check(inner.borrow()) {
+                CheckResult::Fail(message) => CheckResult::Fail(indent(message)),
+                pass => pass,
+            },
+            None => CheckResult::Fail((self.fail_message)(value)),
         }
     }
 }
 
-pub trait ExpectProjection<'e, F, T, U, B>
+/// Builder for chaining expectations on a projected value.
+///
+/// Expectations on the projected value are added to the parent expectation builder and will be checked
+/// in order when the parent expectations are checked.
+pub struct ProjectedExpectationsBuilder<'e, P, T, U>
+where
+    T: Debug + 'e,
+    U: Debug + 'e,
+    P: ExpectationBuilder<'e, T>,
+{
+    parent: P,
+    expectations: Rc<RefCell<ExpectationList<'e, U>>>,
+    _phantom: PhantomData<&'e T>,
+}
+
+impl<'e, P, T, U> ProjectedExpectationsBuilder<'e, P, T, U>
+where
+    T: Debug + 'e,
+    U: Debug + 'e,
+    P: ExpectationBuilder<'e, T>,
+{
+    /// Create a `ProjectedExpectationsBuilder` from a pre-built expectation and its shared list.
+    /// Used by variant-extracting builders (e.g. `to_be_ok_and`).
+    pub fn from_expectation(
+        parent: P,
+        expectation: impl Expectation<T> + 'e,
+        expectations: Rc<RefCell<ExpectationList<'e, U>>>,
+    ) -> Self {
+        Self {
+            parent: parent.to_pass(expectation),
+            expectations,
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Drop the projection and return the parent expectation builder.
+    ///
+    /// No checks are executed when unprojecting - they live on the parent expectation builder.
+    pub fn unproject(self) -> P {
+        self.parent
+    }
+}
+
+impl<'e, P, T, U> ExpectationBuilder<'e, U> for ProjectedExpectationsBuilder<'e, P, T, U>
+where
+    T: Debug + 'e,
+    U: Debug + 'e,
+    P: ExpectationBuilder<'e, T>,
+{
+    fn to_pass(self, expectation: impl Expectation<U> + 'e) -> Self {
+        self.expectations.borrow_mut().push(expectation);
+        self
+    }
+}
+
+/// Extension trait for adding expectations on a projected value.
+pub trait ExpectProjection<'e, F, T, U>
 where
     F: (Fn(&T) -> U) + 'e,
     T: Debug + 'e,
     U: Debug + 'e,
-    B: ExpectationBuilder<'e, U>,
 {
-    /// Add expectations on a projected value
+    /// Add expectations on a projected value.
     ///
     /// ```
     /// use rxpect::expect;
@@ -54,37 +153,36 @@ where
     /// pub struct MyStruct {
     ///     pub foo: u32
     /// }
-    /// expect(MyStruct{ foo: 7 }).projected_by(|it| it.foo, |foo| foo
-    ///     .to_equal(7)
-    /// );
+    /// expect(MyStruct{ foo: 7 }).projected_by(|it| it.foo).to_equal(7);
     /// ```
-    fn projected_by(self, projection: F, config: impl FnOnce(B) -> B) -> Self;
+    fn projected_by(self, projection: F) -> ProjectedExpectationsBuilder<'e, Self, T, U>
+    where
+        Self: Sized + ExpectationBuilder<'e, T>;
 }
 
-impl<'e, F, T, U, B> ExpectProjection<'e, F, T, U, ExpectationList<'e, U>> for B
+impl<'e, F, T, U, B> ExpectProjection<'e, F, T, U> for B
 where
     F: (Fn(&T) -> U) + 'e,
     T: Debug + 'e,
     U: Debug + 'e,
     B: ExpectationBuilder<'e, T>,
 {
-    fn projected_by(
-        self,
-        projection: F,
-        config: impl FnOnce(ExpectationList<'e, U>) -> ExpectationList<'e, U>,
-    ) -> Self {
-        let expectations = config(ExpectationList::new());
-        self.to_pass(ProjectedExpectations {
-            projection,
+    fn projected_by(self, projection: F) -> ProjectedExpectationsBuilder<'e, Self, T, U> {
+        let (expectation, expectations) = ProjectedExpectations::new(
+            move |value| Some(BorrowedOrOwned::Owned(projection(value))),
+            |_| unreachable!(),
+        );
+        ProjectedExpectationsBuilder {
+            parent: self.to_pass(expectation),
             expectations,
-            _t: Default::default(),
-        })
+            _phantom: PhantomData,
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::expectation_list::ExpectationList;
+    use crate::borrow::BorrowedOrOwned;
     use crate::projection::ProjectedExpectations;
     use crate::tests::TestExpectation;
     use crate::{CheckResult, ExpectProjection, Expectation, ExpectationBuilder, expect};
@@ -96,8 +194,10 @@ mod tests {
         let (expectation2, expected2) = TestExpectation::new(CheckResult::Pass);
 
         // And a projection expectation containing those
-        let projection =
-            expect(true).projected_by(|_| 1, |it| it.to_pass(expectation1).to_pass(expectation2));
+        let projection = expect(true)
+            .projected_by(|_| 1)
+            .to_pass(expectation1)
+            .to_pass(expectation2);
 
         // When the projection is dropped
         drop(projection);
@@ -109,20 +209,46 @@ mod tests {
 
     #[test]
     pub fn that_projection_indents_output() {
-        // Given expectation that fails
+        // Given an expectation that fails
         let (expectation, _) = TestExpectation::new(CheckResult::Fail(
             "this\nis\na\nmultiline\nmessage".to_string(),
         ));
 
-        // And an aggregated projection expectation
-        let mut projected = ProjectedExpectations {
-            expectations: ExpectationList::new(),
-            projection: |_| 1,
-            _t: Default::default(),
-        };
-        projected.expectations.push(expectation);
+        // And a projection expectation
+        let (projected, expectations) = ProjectedExpectations::new(
+            |v: &bool| Some(BorrowedOrOwned::Owned(*v)),
+            |_| unreachable!(),
+        );
+        expectations.borrow_mut().push(expectation);
 
-        // When the aggregated expectation is checked
+        // When the expectation is checked
+        let result = projected.check(&true);
+
+        // Then each line of the error message starts with two spaces
+        if let CheckResult::Fail(message) = result {
+            message
+                .lines()
+                .for_each(|line| assert!(line.starts_with("  ")));
+        } else {
+            panic!("Result was a pass when failure was expected");
+        }
+    }
+
+    #[test]
+    pub fn that_variant_projection_indents_output() {
+        // Given an expectation that fails
+        let (expectation, _) = TestExpectation::new(CheckResult::Fail(
+            "this\nis\na\nmultiline\nmessage".to_string(),
+        ));
+
+        // And a variant projection expectation
+        let (projected, expectations) = ProjectedExpectations::new(
+            |v: &bool| Some(BorrowedOrOwned::Borrowed(v)),
+            |_| unreachable!(),
+        );
+        expectations.borrow_mut().push(expectation);
+
+        // When the expectation is checked
         let result = projected.check(&true);
 
         // Then each line of the error message starts with two spaces
@@ -141,15 +267,11 @@ mod tests {
         let (expectation, expected) = TestExpectation::new(CheckResult::Pass);
 
         // And a deeply projected expectation
-        let expectations = expect(true).projected_by(
-            |_| 1,
-            |it| {
-                it.projected_by(
-                    |_| 1.0,
-                    |it| it.projected_by(|_| "foo", |it| it.to_pass(expectation)),
-                )
-            },
-        );
+        let expectations = expect(true)
+            .projected_by(|_: &bool| 1i32)
+            .projected_by(|_: &i32| 1.0f64)
+            .projected_by(|_: &f64| "foo")
+            .to_pass(expectation);
 
         // When the expectations are checked
         drop(expectations);

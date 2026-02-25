@@ -1,5 +1,6 @@
-use crate::expectation_list::ExpectationList;
+use crate::borrow::BorrowedOrOwned;
 use crate::expectations::predicate::PredicateExpectation;
+use crate::projection::{ProjectedExpectations, ProjectedExpectationsBuilder};
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
@@ -44,10 +45,9 @@ where
         F: Fn(&T) -> bool + 'static;
 }
 
-pub trait ProjectedOptionExpectations<'e, T, TB>
+pub trait ProjectedOptionExpectations<'e, T>
 where
     T: Debug + 'e,
-    TB: ExpectationBuilder<'e, T>,
 {
     /// Expect the Option to be Some and then chain into further expectations
     /// ```
@@ -55,10 +55,20 @@ where
     /// # use rxpect::expectations::{EqualityExpectations, ProjectedOptionExpectations};
     ///
     /// let option: Option<i32> = Some(42);
-    /// expect(option).to_be_some_and(|foo| foo.to_equal(42));
+    /// expect(option).to_be_some_and().to_equal(42);
     /// ```
-    /// asserts that the Option is Some and the predicate returns true when applied to the Some value
-    fn to_be_some_and(self, config: impl FnOnce(TB) -> TB) -> Self;
+    /// asserts that the Option is Some and the chained expectations hold for the Some value
+    fn to_be_some_and(self) -> ProjectedExpectationsBuilder<'e, Self, Option<T>, T>
+    where
+        Self: Sized + ExpectationBuilder<'e, Option<T>>;
+}
+
+fn some_extract<T: Debug>(option: &Option<T>) -> Option<BorrowedOrOwned<'_, T>> {
+    option.as_ref().map(BorrowedOrOwned::Borrowed)
+}
+
+fn some_fail_message<T: Debug>(option: &Option<T>) -> String {
+    format!("Expectation failed (expected Some)\n  actual: {:?}", option)
 }
 
 impl<'e, T, B> OptionExpectations<T> for B
@@ -92,37 +102,15 @@ where
     }
 }
 
-impl<'e, T, B> ProjectedOptionExpectations<'e, T, ExpectationList<'e, T>> for B
+impl<'e, T, B> ProjectedOptionExpectations<'e, T> for B
 where
     T: Debug + 'e,
     B: ExpectationBuilder<'e, Option<T>>,
 {
-    fn to_be_some_and(
-        self,
-        config: impl FnOnce(ExpectationList<'e, T>) -> ExpectationList<'e, T>,
-    ) -> Self {
-        let expectations = config(ExpectationList::new());
-        self.to_pass(OptionSomeProjectionExpectation {
-            expectations,
-            _phantom: std::marker::PhantomData,
-        })
-    }
-}
-
-/// Expectation for option Some with projection
-struct OptionSomeProjectionExpectation<'e, T> {
-    expectations: ExpectationList<'e, T>,
-    _phantom: std::marker::PhantomData<T>,
-}
-
-impl<'e, T: Debug + 'e> Expectation<Option<T>> for OptionSomeProjectionExpectation<'e, T> {
-    fn check(&self, value: &Option<T>) -> CheckResult {
-        match value {
-            Some(some_value) => self.expectations.check(some_value),
-            None => {
-                CheckResult::Fail("Expectation failed (expected Some)\n  actual: None".to_string())
-            }
-        }
+    fn to_be_some_and(self) -> ProjectedExpectationsBuilder<'e, Self, Option<T>, T> {
+        let (expectation, expectations) =
+            ProjectedExpectations::new(some_extract::<T>, some_fail_message::<T>);
+        ProjectedExpectationsBuilder::from_expectation(self, expectation, expectations)
     }
 }
 
@@ -205,7 +193,7 @@ mod tests {
     #[test]
     #[should_panic]
     pub fn that_to_be_some_matching_does_not_accept_some_values_that_do_not_match_predicate() {
-        // Given an Option that is Some with a value that does not match the predicate
+        // Given an Option that is Some with a value that does not match the expectation
         let option: Option<i32> = Some(42);
 
         // Expect the to_be_some_matching expectation to fail
@@ -228,7 +216,7 @@ mod tests {
         let option: Option<i32> = Some(42);
 
         // Expect the to_be_some_and expectation to pass
-        expect(option).to_be_some_and(|v| v.to_equal(42));
+        expect(option).to_be_some_and().to_equal(42);
     }
 
     #[test]
@@ -238,7 +226,7 @@ mod tests {
         let option: Option<i32> = Some(42);
 
         // Expect the to_be_some_and expectation to fail
-        expect(option).to_be_some_and(|v| v.to_equal(43));
+        expect(option).to_be_some_and().to_equal(43);
     }
 
     #[test]
@@ -248,6 +236,6 @@ mod tests {
         let option: Option<i32> = None;
 
         // Expect the to_be_some_and expectation to fail
-        expect(option).to_be_some_and(|v| v.to_equal(42));
+        expect(option).to_be_some_and().to_equal(42);
     }
 }

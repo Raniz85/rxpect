@@ -1,5 +1,6 @@
-use crate::expectation_list::ExpectationList;
+use crate::borrow::BorrowedOrOwned;
 use crate::expectations::predicate::PredicateExpectation;
+use crate::projection::{ProjectedExpectations, ProjectedExpectationsBuilder};
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
@@ -58,12 +59,10 @@ where
         F: Fn(&E) -> bool + 'static;
 }
 
-pub trait ProjectedResultExpectations<'e, T, E, TB, EB>
+pub trait ProjectedResultExpectations<'e, T, E>
 where
     T: Debug + 'e,
     E: Debug + 'e,
-    TB: ExpectationBuilder<'e, T>,
-    EB: ExpectationBuilder<'e, E>,
 {
     /// Expect the Result to be Ok and then chain into further expectations
     /// ```
@@ -71,21 +70,41 @@ where
     /// # use rxpect::expectations::{EqualityExpectations, ProjectedResultExpectations};
     ///
     /// let result: Result<i32, &str> = Ok(42);
-    /// expect(result).to_be_ok_and(|foo| foo.to_equal(42));
+    /// expect(result).to_be_ok_and().to_equal(42);
     /// ```
-    /// asserts that the Result is Ok and the predicate returns true when applied to the Ok value
-    fn to_be_ok_and(self, config: impl FnOnce(TB) -> TB) -> Self;
+    /// asserts that the Result is Ok and the chained expectations hold for the Ok value
+    fn to_be_ok_and(self) -> ProjectedExpectationsBuilder<'e, Self, Result<T, E>, T>
+    where
+        Self: Sized + ExpectationBuilder<'e, Result<T, E>>;
 
-    /// Expect the Result to be Ok and then chain into further expectations
+    /// Expect the Result to be Err and then chain into further expectations
     /// ```
     /// # use rxpect::expect;
     /// # use rxpect::expectations::{EqualityExpectations, ProjectedResultExpectations};
     ///
     /// let result: Result<i32, &str> = Err("Error message");
-    /// expect(result).to_be_err_and(|foo| foo.to_equal("Error message"));
+    /// expect(result).to_be_err_and().to_equal("Error message");
     /// ```
-    /// asserts that the Result is Ok and the predicate returns true when applied to the Ok value
-    fn to_be_err_and(self, config: impl FnOnce(EB) -> EB) -> Self;
+    /// asserts that the Result is Err and the chained expectations hold for the Err value
+    fn to_be_err_and(self) -> ProjectedExpectationsBuilder<'e, Self, Result<T, E>, E>
+    where
+        Self: Sized + ExpectationBuilder<'e, Result<T, E>>;
+}
+
+fn ok_extract<T: Debug, E: Debug>(result: &Result<T, E>) -> Option<BorrowedOrOwned<'_, T>> {
+    result.as_ref().ok().map(BorrowedOrOwned::Borrowed)
+}
+
+fn ok_fail_message<T: Debug, E: Debug>(result: &Result<T, E>) -> String {
+    format!("Expectation failed (expected Ok)\n  actual: {:?}", result)
+}
+
+fn err_extract<T: Debug, E: Debug>(result: &Result<T, E>) -> Option<BorrowedOrOwned<'_, E>> {
+    result.as_ref().err().map(BorrowedOrOwned::Borrowed)
+}
+
+fn err_fail_message<T: Debug, E: Debug>(result: &Result<T, E>) -> String {
+    format!("Expectation failed (expected Err)\n  actual: {:?}", result)
 }
 
 impl<'e, T, E, B> ResultExpectations<T, E> for B
@@ -128,73 +147,23 @@ where
         self.to_pass(IsErrMatchingExpectation(predicate))
     }
 }
-impl<'e, T, E, B>
-    ProjectedResultExpectations<'e, T, E, ExpectationList<'e, T>, ExpectationList<'e, E>> for B
+
+impl<'e, T, E, B> ProjectedResultExpectations<'e, T, E> for B
 where
     T: Debug + 'e,
     E: Debug + 'e,
     B: ExpectationBuilder<'e, Result<T, E>>,
 {
-    fn to_be_ok_and(
-        self,
-        config: impl FnOnce(ExpectationList<'e, T>) -> ExpectationList<'e, T>,
-    ) -> Self {
-        let expectations = config(ExpectationList::new());
-        self.to_pass(ResultOkProjectionExpectation {
-            expectations,
-            _phantom: std::marker::PhantomData,
-        })
+    fn to_be_ok_and(self) -> ProjectedExpectationsBuilder<'e, Self, Result<T, E>, T> {
+        let (expectation, expectations) =
+            ProjectedExpectations::new(ok_extract::<T, E>, ok_fail_message::<T, E>);
+        ProjectedExpectationsBuilder::from_expectation(self, expectation, expectations)
     }
 
-    fn to_be_err_and(
-        self,
-        config: impl FnOnce(ExpectationList<'e, E>) -> ExpectationList<'e, E>,
-    ) -> Self {
-        let expectations = config(ExpectationList::new());
-        self.to_pass(ResultErrProjectionExpectation {
-            expectations,
-            _phantom: std::marker::PhantomData,
-        })
-    }
-}
-
-/// Expectation for result Ok with projection
-struct ResultOkProjectionExpectation<'e, T, E> {
-    expectations: ExpectationList<'e, T>,
-    _phantom: std::marker::PhantomData<E>,
-}
-
-impl<'e, T: Debug + 'e, E: Debug> Expectation<Result<T, E>>
-    for ResultOkProjectionExpectation<'e, T, E>
-{
-    fn check(&self, value: &Result<T, E>) -> CheckResult {
-        match value {
-            Ok(ok_value) => self.expectations.check(ok_value),
-            Err(e) => CheckResult::Fail(format!(
-                "Expectation failed (expected Ok)\n  actual: Err({:?})",
-                e
-            )),
-        }
-    }
-}
-
-/// Expectation for result Err with projection
-struct ResultErrProjectionExpectation<'e, T, E> {
-    expectations: ExpectationList<'e, E>,
-    _phantom: std::marker::PhantomData<T>,
-}
-
-impl<'e, T: Debug + 'e, E: Debug> Expectation<Result<T, E>>
-    for ResultErrProjectionExpectation<'e, T, E>
-{
-    fn check(&self, value: &Result<T, E>) -> CheckResult {
-        match value {
-            Ok(value) => CheckResult::Fail(format!(
-                "Expectation failed (expected Err)\n  actual: Ok({:?})",
-                value
-            )),
-            Err(err) => self.expectations.check(err),
-        }
+    fn to_be_err_and(self) -> ProjectedExpectationsBuilder<'e, Self, Result<T, E>, E> {
+        let (expectation, expectations) =
+            ProjectedExpectations::new(err_extract::<T, E>, err_fail_message::<T, E>);
+        ProjectedExpectationsBuilder::from_expectation(self, expectation, expectations)
     }
 }
 
@@ -358,7 +327,7 @@ mod tests {
         let result: Result<i32, &str> = Ok(42);
 
         // Expect the to_be_ok_and expectation to pass
-        expect(result).to_be_ok_and(|v| v.to_equal(42));
+        expect(result).to_be_ok_and().to_equal(42);
     }
 
     #[test]
@@ -368,7 +337,7 @@ mod tests {
         let result: Result<i32, &str> = Ok(42);
 
         // Expect the to_be_ok_and expectation to fail
-        expect(result).to_be_ok_and(|v| v.to_equal(43));
+        expect(result).to_be_ok_and().to_equal(43);
     }
 
     #[test]
@@ -378,7 +347,7 @@ mod tests {
         let result: Result<i32, &str> = Err("error");
 
         // Expect the to_be_ok_and expectation to fail
-        expect(result).to_be_ok_and(|v| v.to_equal(42));
+        expect(result).to_be_ok_and().to_equal(42);
     }
 
     #[test]
@@ -387,7 +356,7 @@ mod tests {
         let result: Result<i32, &str> = Err("error");
 
         // Expect the to_be_err_and expectation to pass
-        expect(result).to_be_err_and(|e| e.to_equal("error"));
+        expect(result).to_be_err_and().to_equal("error");
     }
 
     #[test]
@@ -397,7 +366,7 @@ mod tests {
         let result: Result<i32, &str> = Err("error");
 
         // Expect the to_be_err_and expectation to fail
-        expect(result).to_be_err_and(|e| e.to_equal("other error"));
+        expect(result).to_be_err_and().to_equal("other error");
     }
 
     #[test]
@@ -407,7 +376,7 @@ mod tests {
         let result: Result<i32, &str> = Ok(42);
 
         // Expect the to_be_err_and expectation to fail
-        expect(result).to_be_err_and(|e| e.to_equal("error"));
+        expect(result).to_be_err_and().to_equal("error");
     }
 
     #[test]
