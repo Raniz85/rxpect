@@ -252,9 +252,9 @@ impl<T: Debug, E: Debug, F: Fn(&E) -> bool> Expectation<Result<T, E>>
 
 #[cfg(test)]
 mod tests {
-    use crate::expect;
     use crate::expectations::EqualityExpectations;
     use crate::expectations::result::{ProjectedResultExpectations, ResultExpectations};
+    use crate::{expect, expect_ref};
 
     #[test]
     pub fn that_to_be_ok_accepts_ok_values() {
@@ -408,5 +408,14 @@ mod tests {
 
         // Expect the to_be_err_and expectation to fail
         expect(result).to_be_err_and(|e| e.to_equal("error"));
+    }
+
+    #[test]
+    pub fn that_to_be_ok_accepts_reference() {
+        // Given a Result that is Ok
+        let result: Result<i32, &str> = Ok(42);
+
+        // Expect the to_be_ok expectation to pass for a reference to the result
+        expect_ref(&result).to_be_ok();
     }
 }

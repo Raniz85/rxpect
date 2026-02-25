@@ -87,6 +87,18 @@ pub fn expect<'e, T: Debug>(value: T) -> RootExpectations<'e, T> {
     RootExpectations::new(value)
 }
 
+/// Create expectations for a reference to a value.
+/// Used as an entrypoint for fluently building expectations
+/// ```
+/// use rxpect::expect_ref;
+/// use rxpect::expectations::EqualityExpectations;
+///
+/// expect_ref(&1).to_equal(1);
+/// ```
+pub fn expect_ref<T: Debug>(value: &'_ T) -> RootExpectations<'_, T> {
+    RootExpectations::new_ref(value)
+}
+
 #[cfg(test)]
 pub(crate) mod tests {
     use crate::{CheckResult, Expectation};

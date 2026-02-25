@@ -1,12 +1,27 @@
 use crate::expectation_list::ExpectationList;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
+use std::borrow::Borrow;
 use std::fmt::Debug;
+
+enum BorrowedOrOwned<'e, T> {
+    Borrowed(&'e T),
+    Owned(T),
+}
+
+impl<'e, T> Borrow<T> for BorrowedOrOwned<'e, T> {
+    fn borrow(&self) -> &T {
+        match self {
+            BorrowedOrOwned::Borrowed(reference) => reference,
+            BorrowedOrOwned::Owned(owned) => owned,
+        }
+    }
+}
 
 /// Container for expectations on a value.
 ///
 /// Returned by [expect](crate::expect)
 pub struct RootExpectations<'e, T: Debug> {
-    value: T,
+    value: BorrowedOrOwned<'e, T>,
     expectations: ExpectationList<'e, T>,
 }
 
@@ -14,7 +29,14 @@ impl<'e, T: Debug> RootExpectations<'e, T> {
     pub(crate) fn new(value: T) -> Self {
         RootExpectations {
             expectations: ExpectationList::new(),
-            value,
+            value: BorrowedOrOwned::Owned(value),
+        }
+    }
+
+    pub(crate) fn new_ref(value: &'e T) -> Self {
+        RootExpectations {
+            expectations: ExpectationList::new(),
+            value: BorrowedOrOwned::Borrowed(value),
         }
     }
 
@@ -34,7 +56,7 @@ impl<'e, T: Debug> ExpectationBuilder<'e, T> for RootExpectations<'e, T> {
 
 impl<'e, T: Debug> Drop for RootExpectations<'e, T> {
     fn drop(&mut self) {
-        if let CheckResult::Fail(message) = self.expectations.check(&self.value) {
+        if let CheckResult::Fail(message) = self.expectations.check(self.value.borrow()) {
             panic!("{}", message);
         }
     }
@@ -43,7 +65,7 @@ impl<'e, T: Debug> Drop for RootExpectations<'e, T> {
 #[cfg(test)]
 mod tests {
     use crate::tests::TestExpectation;
-    use crate::{CheckResult, ExpectationBuilder, expect};
+    use crate::{CheckResult, ExpectationBuilder, expect, expect_ref};
 
     #[test]
     pub fn that_assert_runs_an_expectation() {
@@ -67,7 +89,7 @@ mod tests {
 
         // Expect a reference to work
         let value = true;
-        expect(&value).to_pass(expectation);
+        expect_ref(&value).to_pass(expectation);
     }
 
     #[test]
