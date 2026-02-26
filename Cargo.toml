@@ -13,11 +13,11 @@ repository = "https://github.com/raniz85/rxpect"
 documentation = "https://docs.rs/rxpect"
 
 [dependencies]
-itertools = {  version = "0.14.0", optional = true }
+itertools = { version = "0.14.0", optional = true }
 
 [dev-dependencies]
 rstest = "0.26.1"
 
 [features]
 default = ["iterables"]
-iterables = [ "itertools" ]
+iterables = [ "dep:itertools" ]
