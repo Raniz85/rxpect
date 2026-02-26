@@ -13,7 +13,7 @@ pub trait EqualityExpectations<T, U> {
     /// expect(a).to_equal(b);
     /// ```
     ///
-    /// It works with differing types as well, as well as T: Eq<U> holds true
+    /// It works with differing types as well, as long as `T: Eq<U>` holds true
     /// ```
     /// # use rxpect::expect;
     /// # use rxpect::expectations::EqualityExpectations;

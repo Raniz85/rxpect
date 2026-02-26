@@ -7,20 +7,27 @@ use std::fmt::Debug;
 /// Container for expectations on a value.
 ///
 /// Returned by [expect](crate::expect)
+///
+/// Contains the value under test and all expectations.
+/// Expectations are automatically run when `RootExpectations` is dropped.
+///
+/// Expectation failures result in a panic
 pub struct RootExpectations<'e, T: Debug> {
     value: BorrowedOrOwned<'e, T>,
     expectations: ExpectationList<'e, T>,
 }
 
 impl<'e, T: Debug> RootExpectations<'e, T> {
-    pub(crate) fn new(value: T) -> Self {
+    /// Create new `RootExpectations` on an owned value
+    pub fn new(value: T) -> Self {
         RootExpectations {
             expectations: ExpectationList::new(),
             value: BorrowedOrOwned::Owned(value),
         }
     }
 
-    pub(crate) fn new_ref(value: &'e T) -> Self {
+    /// Create new `RootExpectations` on a borrowed value
+    pub fn new_ref(value: &'e T) -> Self {
         RootExpectations {
             expectations: ExpectationList::new(),
             value: BorrowedOrOwned::Borrowed(value),

@@ -3,7 +3,7 @@
 //!
 //! ### What does it mean?
 //!
-//! Either _Rust Expect_ or _Raniz Expect_, pick whichever you like best.
+//! Either _Rust Expect_ or _Raniz' Expect_, pick whichever you like best.
 //!
 //! ## How do I use this thing?
 //!
@@ -41,24 +41,30 @@
 //! expected: `3`
 //! actual: `2`'
 //! ```
-pub mod borrow;
-pub mod expectation_list;
+mod borrow;
+mod expectation_list;
 pub mod expectations;
 mod projection;
 mod root;
 
+pub use borrow::BorrowedOrOwned;
+pub use expectation_list::ExpectationList;
 pub use projection::ExpectProjection;
 pub use projection::ProjectedExpectationsBuilder;
 pub use root::RootExpectations;
+
 use std::fmt::Debug;
 
 #[doc = include_str!("../README.md")]
 #[cfg(doctest)]
 pub struct ReadmeDoctests;
 
+/// Result of an expectation check
 #[derive(Clone, Debug)]
 pub enum CheckResult {
+    /// The expectation passed
     Pass,
+    /// The expectation failed, contains a message describing the failure
     Fail(String),
 }
 

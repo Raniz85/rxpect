@@ -1,18 +1,28 @@
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
+/// List of expectations on a value.
 pub struct ExpectationList<'e, T>(Vec<Box<dyn Expectation<T> + 'e>>);
 
 impl<'e, T: Debug> ExpectationList<'e, T> {
-    pub(crate) fn new() -> Self {
+    /// Creates a new empty list of expectations.
+    pub fn new() -> Self {
         ExpectationList(Vec::new())
     }
 
-    pub(crate) fn push(&mut self, expectation: impl Expectation<T> + 'e) {
+    /// Add a new expectation to the list.
+    pub fn push(&mut self, expectation: impl Expectation<T> + 'e) {
         self.0.push(Box::new(expectation));
     }
 
-    pub(crate) fn check(&self, value: &T) -> CheckResult {
+    /// Check all expectations on the value.
+    ///
+    /// Runs _all_ expectations in order.
+    ///
+    /// # Returns
+    /// `CheckResult::Pass` if all expectations pass, otherwise `CheckResult::Fail` with a formatted message.
+    /// If multiple failures occur, they are concatenated with newlines.
+    pub fn check(&self, value: &T) -> CheckResult {
         let failures = self
             .0
             .iter()
@@ -33,6 +43,12 @@ impl<'e, T: Debug> ExpectationList<'e, T> {
         } else {
             CheckResult::Pass
         }
+    }
+}
+
+impl<'e, T: Debug> Default for ExpectationList<'e, T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

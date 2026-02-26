@@ -1,5 +1,6 @@
 use std::borrow::Borrow;
 
+/// A simpler version of Cow that can only borrow values, not convert them into owned.
 pub enum BorrowedOrOwned<'a, T> {
     Borrowed(&'a T),
     Owned(T),
