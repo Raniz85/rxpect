@@ -20,7 +20,7 @@ where
     /// # Parameters
     /// * _expected_value_ The expected value
     /// * _predicate_ The predicate to use for the check, called with both the actual value and the expected value
-    /// * _error_message_ Function ta produce the error message, called with both the actual value and the expected value
+    /// * _error_message_ Function to produce the error message, called with both the actual value and the expected value
     pub fn new(
         expected_value: U,
         predicate: for<'a> fn(&'a T, &U) -> bool,

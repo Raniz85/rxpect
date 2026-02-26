@@ -65,17 +65,17 @@ where
     }
 
     fn to_not_be_empty(self) -> Self {
-        self.to_pass(NotEmtpyExpectation {})
+        self.to_pass(NotEmptyExpectation {})
     }
 
     fn to_be_empty(self) -> Self {
-        self.to_pass(EmtpyExpectation {})
+        self.to_pass(EmptyExpectation {})
     }
 }
 
-struct EmtpyExpectation;
+struct EmptyExpectation;
 
-impl<I, C> Expectation<I> for EmtpyExpectation
+impl<I, C> Expectation<I> for EmptyExpectation
 where
     I: Debug,
     for<'a> &'a I: IntoIterator<Item = &'a C>,
@@ -92,9 +92,9 @@ where
     }
 }
 
-struct NotEmtpyExpectation;
+struct NotEmptyExpectation;
 
-impl<I, C> Expectation<I> for NotEmtpyExpectation
+impl<I, C> Expectation<I> for NotEmptyExpectation
 where
     I: Debug,
     for<'a> &'a I: IntoIterator<Item = &'a C>,

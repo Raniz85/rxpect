@@ -36,7 +36,7 @@ where
     U: Debug + 'e,
     F: for<'a> Fn(&'a T) -> Option<BorrowedOrOwned<'a, U>>,
 {
-    /// Create  new `ProjectedExpectations` paired with its shared expectation list.
+    /// Create new `ProjectedExpectations` paired with its shared expectation list.
     ///
     /// When checked, `extract` is called: `Some` runs inner expectations on the extracted value,
     /// `None` calls `fail_message` to produce the error string.

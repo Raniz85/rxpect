@@ -204,7 +204,7 @@ mod tests {
     }
 
     #[test]
-    pub fn thaht_empty_list_is_contained() {
+    pub fn that_empty_list_is_contained() {
         // Given a vec with a value that implements PartialEq
         let value = vec![1];
 
