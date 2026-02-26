@@ -5,7 +5,7 @@ use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
 /// Extension trait for Result expectations
-pub trait ResultExpectations<T, E>
+pub trait ResultExpectations<'e, T, E>
 where
     T: Debug,
     E: Debug,
@@ -43,7 +43,7 @@ where
     /// asserts that the Result is Ok and the predicate returns true when applied to the Ok value
     fn to_be_ok_matching<F>(self, predicate: F) -> Self
     where
-        F: Fn(&T) -> bool + 'static;
+        F: Fn(&T) -> bool + 'e;
 
     /// Expect the Result to be Err and the Err value to match a predicate
     /// ```
@@ -56,7 +56,7 @@ where
     /// asserts that the Result is Err and the predicate returns true when applied to the Err value
     fn to_be_err_matching<F>(self, predicate: F) -> Self
     where
-        F: Fn(&E) -> bool + 'static;
+        F: Fn(&E) -> bool + 'e;
 }
 
 pub trait ProjectedResultExpectations<'e, T, E>
@@ -107,7 +107,7 @@ fn err_fail_message<T: Debug, E: Debug>(result: &Result<T, E>) -> String {
     format!("Expectation failed (expected Err)\n  actual: {:?}", result)
 }
 
-impl<'e, T, E, B> ResultExpectations<T, E> for B
+impl<'e, T, E, B> ResultExpectations<'e, T, E> for B
 where
     T: Debug + 'e,
     E: Debug + 'e,
@@ -135,14 +135,14 @@ where
 
     fn to_be_ok_matching<F>(self, predicate: F) -> Self
     where
-        F: Fn(&T) -> bool + 'static,
+        F: Fn(&T) -> bool + 'e,
     {
         self.to_pass(IsOkMatchingExpectation(predicate))
     }
 
     fn to_be_err_matching<F>(self, predicate: F) -> Self
     where
-        F: Fn(&E) -> bool + 'static,
+        F: Fn(&E) -> bool + 'e,
     {
         self.to_pass(IsErrMatchingExpectation(predicate))
     }

@@ -5,7 +5,7 @@ use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
 /// Extension trait for Option expectations
-pub trait OptionExpectations<T>
+pub trait OptionExpectations<'e, T>
 where
     T: Debug,
 {
@@ -42,7 +42,7 @@ where
     /// asserts that the Option is Some and the predicate returns true when applied to the Some value
     fn to_be_some_matching<F>(self, predicate: F) -> Self
     where
-        F: Fn(&T) -> bool + 'static;
+        F: Fn(&T) -> bool + 'e;
 }
 
 pub trait ProjectedOptionExpectations<'e, T>
@@ -71,7 +71,7 @@ fn some_fail_message<T: Debug>(option: &Option<T>) -> String {
     format!("Expectation failed (expected Some)\n  actual: {:?}", option)
 }
 
-impl<'e, T, B> OptionExpectations<T> for B
+impl<'e, T, B> OptionExpectations<'e, T> for B
 where
     T: Debug + 'e,
     B: ExpectationBuilder<'e, Option<T>>,
@@ -96,7 +96,7 @@ where
 
     fn to_be_some_matching<F>(self, predicate: F) -> Self
     where
-        F: Fn(&T) -> bool + 'static,
+        F: Fn(&T) -> bool + 'e,
     {
         self.to_pass(IsSomeMatchingExpectation(predicate))
     }
