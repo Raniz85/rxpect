@@ -117,7 +117,7 @@ where
     /// asserts that `text` consists entirely of alphanumeric characters
     fn to_be_alphanumeric(self) -> Self;
 
-    /// Make expectations on the length of the string.
+    /// Make expectations on the number of characters of the string.
     ///
     /// ```
     /// # use rxpect::expect;
@@ -157,12 +157,12 @@ where
     fn to_have_length(self, length: usize) -> Self {
         self.to_pass(PredicateExpectation::new(
             length,
-            |a: &T, &b| a.as_ref().len() == b,
+            |a: &T, &b| a.as_ref().chars().count() == b,
             |a: &T, &b| {
                 format!(
                     "Expected \"{}\" to have length {b}, but it has length {}",
                     a.as_ref(),
-                    a.as_ref().len()
+                    a.as_ref().chars().count()
                 )
             },
         ))
@@ -228,7 +228,7 @@ where
     where
         Self: Sized,
     {
-        self.projected_by(|it: &T| it.as_ref().len())
+        self.projected_by(|it: &T| it.as_ref().chars().count())
     }
 }
 
@@ -315,6 +315,29 @@ mod tests {
         #[case] length: usize,
     ) {
         expect(actual).to_have_length(length);
+    }
+
+    #[rstest]
+    #[case("Ä", 1)] // 2 UTF-8 bytes, 1 character
+    #[case("中文", 2)] // 6 UTF-8 bytes, 2 characters
+    #[case("héllo", 5)] // 6 UTF-8 bytes, 5 characters
+    fn that_to_have_length_counts_characters_not_bytes(
+        #[case] actual: &str,
+        #[case] length: usize,
+    ) {
+        expect(actual).to_have_length(length);
+    }
+
+    #[rstest]
+    #[case("Ä", 1)] // 2 UTF-8 bytes, 1 character
+    #[case("中文", 2)] // 6 UTF-8 bytes, 2 characters
+    #[case("héllo", 5)] // 6 UTF-8 bytes, 5 characters
+    fn that_length_projection_counts_characters_not_bytes(
+        #[case] actual: &str,
+        #[case] length: usize,
+    ) {
+        use crate::expectations::EqualityExpectations;
+        expect(actual).length().to_equal(length);
     }
 
     #[rstest]
