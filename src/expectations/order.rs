@@ -89,7 +89,7 @@ where
         self.to_pass(PredicateExpectation::new(
             value,
             |a: &T, b: &T| a.lt(b),
-            |a: &T, b: &T| format!("Expectation failed (a < b)\na: `{:?}`\nb: `{:?}`", b, a),
+            |a: &T, b: &T| format!("Expectation failed (a < b)\na: `{:?}`\nb: `{:?}`", a, b),
         ))
     }
 
@@ -97,7 +97,7 @@ where
         self.to_pass(PredicateExpectation::new(
             value,
             |a: &T, b: &T| a.le(b),
-            |a: &T, b: &T| format!("Expectation failed (a ≤ b)\na: `{:?}`\nb: `{:?}`", b, a),
+            |a: &T, b: &T| format!("Expectation failed (a ≤ b)\na: `{:?}`\nb: `{:?}`", a, b),
         ))
     }
 
@@ -105,7 +105,7 @@ where
         self.to_pass(PredicateExpectation::new(
             value,
             |a: &T, b: &T| a.gt(b),
-            |a: &T, b: &T| format!("Expectation failed (a > b)\na: `{:?}`\nb: `{:?}`", b, a),
+            |a: &T, b: &T| format!("Expectation failed (a > b)\na: `{:?}`\nb: `{:?}`", a, b),
         ))
     }
 
@@ -113,7 +113,7 @@ where
         self.to_pass(PredicateExpectation::new(
             value,
             |a: &T, b: &T| a.ge(b),
-            |a: &T, b: &T| format!("Expectation failed (a ≥ b)\na: `{:?}`\nb: `{:?}`", b, a),
+            |a: &T, b: &T| format!("Expectation failed (a ≥ b)\na: `{:?}`\nb: `{:?}`", a, b),
         ))
     }
 
