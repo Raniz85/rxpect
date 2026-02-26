@@ -1,5 +1,5 @@
 use super::predicate::PredicateExpectation;
-use crate::ExpectationBuilder;
+use crate::{ExpectProjection, ExpectationBuilder};
 use std::fmt::Debug;
 
 /// Expectations for strings
@@ -116,6 +116,21 @@ where
     /// ```
     /// asserts that `text` consists entirely of alphanumeric characters
     fn to_be_alphanumeric(self) -> Self;
+
+    /// Make expectations on the length of the string.
+    ///
+    /// ```
+    /// # use rxpect::expect;
+    /// # use rxpect::expectations::StringExpectations;
+    /// # use rxpect::expectations::OrderExpectations;
+    ///
+    /// let text = "Hello123";
+    /// expect(text).length().to_be_greater_than_or_equal(2);
+    /// ```
+    /// asserts that `text` has a length of at least 2
+    fn length(self) -> impl ExpectationBuilder<'e, usize>
+    where
+        Self: Sized;
 }
 
 impl<'e, T, B> StringExpectations<'e, T> for B
@@ -207,6 +222,13 @@ where
             |a: &T, _| !a.as_ref().is_empty() && a.as_ref().chars().all(|c| c.is_alphanumeric()),
             |a: &T, _| format!("Expected \"{}\" to be alphanumeric", a.as_ref()),
         ))
+    }
+
+    fn length(self) -> impl ExpectationBuilder<'e, usize>
+    where
+        Self: Sized,
+    {
+        self.projected_by(|it: &T| it.as_ref().len())
     }
 }
 
