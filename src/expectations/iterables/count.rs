@@ -14,7 +14,7 @@ where
     ///
     /// ```
     /// # use rxpect::expect;
-    /// # use rxpect::expectations::IterableCountExpectations;
+    /// # use rxpect::expectations::iterables::IterableCountExpectations;
     /// # use rxpect::expectations::OrderExpectations;
     ///
     /// let items = vec!["bar", "foo", "foo"];
@@ -29,7 +29,7 @@ where
     ///
     /// ```
     /// # use rxpect::expect;
-    /// # use rxpect::expectations::IterableCountExpectations;
+    /// # use rxpect::expectations::iterables::IterableCountExpectations;
     ///
     /// let items = vec!["bar", "foo", "foo"];
     /// expect(items).to_not_be_empty();
@@ -41,7 +41,7 @@ where
     ///
     /// ```
     /// # use rxpect::expect;
-    /// # use rxpect::expectations::IterableCountExpectations;
+    /// # use rxpect::expectations::iterables::IterableCountExpectations;
     ///
     /// let items: Vec<u8> = vec![];
     /// expect(items).to_be_empty();

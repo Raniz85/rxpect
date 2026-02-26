@@ -13,7 +13,7 @@ where
     /// Expect an iterable to contain at least one value equal to another value
     /// ```
     /// # use rxpect::expect;
-    /// # use rxpect::expectations::IterableItemEqualityExpectations;
+    /// # use rxpect::expectations::iterables::IterableItemEqualityExpectations;
     ///
     /// let haystack = vec!["bar", "foo", "foo"];
     /// let needle = "foo";
@@ -25,7 +25,7 @@ where
     /// Expect an iterable to contain at least one value equal to another value
     /// ```
     /// # use rxpect::expect;
-    /// # use rxpect::expectations::IterableItemEqualityExpectations;
+    /// # use rxpect::expectations::iterables::IterableItemEqualityExpectations;
     ///
     /// let haystack = vec!["apple", "orange", "pear", "apple", "peach"];
     /// let needles = ["orange", "apple"];
@@ -37,7 +37,7 @@ where
     /// Expect an iterable to be equivalent to another iterable
     /// ```
     /// # use rxpect::expect;
-    /// # use rxpect::expectations::IterableItemEqualityExpectations;
+    /// # use rxpect::expectations::iterables::IterableItemEqualityExpectations;
     ///
     /// let a = vec!["apple", "orange", "pear", "apple", "peach"];
     /// let b = ["apple", "orange", "pear", "apple", "peach"];
@@ -49,7 +49,7 @@ where
     /// Expect an iterable to be equivalent to another iterable, ignoring the order of items
     /// ```
     /// # use rxpect::expect;
-    /// # use rxpect::expectations::IterableItemEqualityExpectations;
+    /// # use rxpect::expectations::iterables::IterableItemEqualityExpectations;
     ///
     /// let a = vec!["apple", "orange", "pear", "apple", "peach"];
     /// let b = ["orange", "peach", "apple", "apple", "pear"];
