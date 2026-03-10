@@ -138,7 +138,7 @@ expect(value)
 All expectations are implemented as extension traits on the `ExpectationBuilder` trait.
 This is to ensure extensibility and modularity.
 This can make discovering expectations a bit tricky.
-The easiest way to find them is to look at the various traits in the `expectations` module.
+The easiest way to find them is to look at the various traits in the [`expectations`] module.
 
 ## Custom expectations
 RXpect is built with extensibility in mind.
@@ -147,6 +147,61 @@ In fact, all bundled expectations are implemented in the same way as custom expe
 To add a custom expectation, add a new extension trait and implement it for the `ExtensionBuilder`,
 adding any restrictions on trait implementations of the type under test that you need.
 
+```rust
+use rxpect::expect;
+use rxpect::ExpectationBuilder;
+use rxpect::Expectation;
+use rxpect::CheckResult;
+use rxpect::expectations::PredicateExpectation;
+
+// This is the extension trat that defines the extension methods
+pub trait ToBeEvenExpectations {
+    fn to_be_even(self) -> Self;
+    fn to_be_odd(self) -> Self;
+}
+
+// implementation of the extension trait for ExpectationBuilder<'_, u32>
+impl<'e, B: ExpectationBuilder<'e, u32>> ToBeEvenExpectations for B
+{
+    fn to_be_even(self) -> B {
+        // Expectation implementation with a custom expectation implementation
+        // Better if you need complex logic or more context,
+        // also gives full control over the error handling
+        self.to_pass(EvenExpectation)
+    }
+    
+    fn to_be_odd(self) -> B {
+        // Expectation implementation with a predicate
+        // suitable for simpler checks
+        self.to_pass(PredicateExpectation::new(
+            // The expected/reference value, passed to both the predicate
+            // and the error message producer. We don't use one here
+            (),
+            // The check, returns a bool
+            |actual, _reference| actual % 2 != 0,
+            // This is called to get the error message in case the check fails
+            |actual, _reference| format!("Expected odd value, but got {actual}")
+        ))
+    }
+}
+
+// Custom expectation to implement the check
+struct EvenExpectation;
+
+impl Expectation<u32> for EvenExpectation {
+    fn check(&self, value: &u32) -> CheckResult {
+        if value % 2 == 0 {
+            CheckResult::Pass
+        } else {
+            CheckResult::Fail(format!("Expected even value, but was {value}"))
+        }
+    }
+}
+
+expect(2).to_be_even();
+expect(3).to_be_odd();
+```
+
 
 ## I don't like it
 
@@ -154,14 +209,14 @@ Use something else.
 Here's a bunch of other crates that also does fluent expectations,
 in no particular order:
 
-- https://crates.io/crates/totems
-- https://crates.io/crates/lets_expect
-- https://crates.io/crates/fluent-assertions
-- https://crates.io/crates/xpct
-- https://crates.io/crates/expect
-- https://crates.io/crates/fluent-asserter
-- https://crates.io/crates/spectral
-- https://crates.io/crates/assertables
-- https://crates.io/crates/speculoos
-- https://crates.io/crates/assert
-- https://crates.io/crates/rassert
+- <https://crates.io/crates/totems>
+- <https://crates.io/crates/lets_expect>
+- <https://crates.io/crates/fluent-assertions>
+- <https://crates.io/crates/xpct>
+- <https://crates.io/crates/expect>
+- <https://crates.io/crates/fluent-asserter>
+- <https://crates.io/crates/spectral>
+- <https://crates.io/crates/assertables>
+- <https://crates.io/crates/speculoos>
+- <https://crates.io/crates/assert>
+- <https://crates.io/crates/rassert>
