@@ -41,6 +41,7 @@
 //! expected: `3`
 //! actual: `2`'
 //! ```
+#![doc=include_str!("../README.md")]
 mod borrow;
 mod expectation_list;
 pub mod expectations;

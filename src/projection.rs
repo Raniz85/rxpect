@@ -1,7 +1,6 @@
 use crate::borrow::BorrowedOrOwned;
 use crate::expectation_list::ExpectationList;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
-use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -71,10 +70,13 @@ where
 {
     fn check(&self, value: &T) -> CheckResult {
         match (self.extract)(value) {
-            Some(inner) => match (*self.expectations).borrow().check(inner.borrow()) {
-                CheckResult::Fail(message) => CheckResult::Fail(indent(message)),
-                pass => pass,
-            },
+            Some(inner) => {
+                let inner_ref = inner.borrow_self();
+                match (*self.expectations).borrow().check(inner_ref) {
+                    CheckResult::Fail(message) => CheckResult::Fail(indent(message)),
+                    pass => pass,
+                }
+            }
             None => CheckResult::Fail((self.fail_message)(value)),
         }
     }
@@ -136,9 +138,8 @@ where
 }
 
 /// Extension trait for adding expectations on a projected value.
-pub trait ExpectProjection<'e, F, T, U>
+pub trait ExpectProjection<'e, T, U>
 where
-    F: (Fn(&T) -> U) + 'e,
     T: Debug + 'e,
     U: Debug + 'e,
 {
@@ -155,21 +156,70 @@ where
     /// }
     /// expect(MyStruct{ foo: 7 }).projected_by(|it| it.foo).to_equal(7);
     /// ```
-    fn projected_by(self, projection: F) -> ProjectedExpectationsBuilder<'e, Self, T, U>
+    fn projected_by<F>(self, projection: F) -> ProjectedExpectationsBuilder<'e, Self, T, U>
     where
+        F: Fn(&T) -> U + 'e,
+        Self: Sized + ExpectationBuilder<'e, T>;
+
+    /// Add expectations on a projected reference.
+    ///
+    /// ```
+    /// use rxpect::expect;
+    /// use rxpect::expectations::EqualityExpectations;
+    /// use rxpect::ExpectProjection;
+    ///
+    /// #[derive(Debug)]
+    /// struct Parent {
+    ///     child: Child,
+    /// }
+    ///
+    /// #[derive(Debug, Eq, PartialEq)]
+    /// struct Child {
+    ///     number: u32,
+    /// }
+    ///
+    /// let value = Parent {
+    ///     child: Child {
+    ///         number: 7
+    ///     },
+    /// };
+    /// expect(value)
+    ///     .projected_by_ref(|s| &s.child)
+    ///     .to_equal(Child { number: 7 });
+    /// ```
+    fn projected_by_ref<F>(self, projection: F) -> ProjectedExpectationsBuilder<'e, Self, T, U>
+    where
+        F: (for<'a> Fn(&'a T) -> &'a U) + 'e,
         Self: Sized + ExpectationBuilder<'e, T>;
 }
 
-impl<'e, F, T, U, B> ExpectProjection<'e, F, T, U> for B
+impl<'e, T, U, B> ExpectProjection<'e, T, U> for B
 where
-    F: (Fn(&T) -> U) + 'e,
     T: Debug + 'e,
     U: Debug + 'e,
     B: ExpectationBuilder<'e, T>,
 {
-    fn projected_by(self, projection: F) -> ProjectedExpectationsBuilder<'e, Self, T, U> {
+    fn projected_by<F>(self, projection: F) -> ProjectedExpectationsBuilder<'e, Self, T, U>
+    where
+        F: Fn(&T) -> U + 'e,
+    {
         let (expectation, expectations) = ProjectedExpectations::new(
             move |value| Some(BorrowedOrOwned::Owned(projection(value))),
+            |_| unreachable!(),
+        );
+        ProjectedExpectationsBuilder {
+            parent: self.to_pass(expectation),
+            expectations,
+            _phantom: PhantomData,
+        }
+    }
+
+    fn projected_by_ref<F>(self, projection: F) -> ProjectedExpectationsBuilder<'e, Self, T, U>
+    where
+        F: (for<'a> Fn(&'a T) -> &'a U) + 'e,
+    {
+        let (expectation, expectations) = ProjectedExpectations::new(
+            move |value| Some(BorrowedOrOwned::Borrowed(projection(value))),
             |_| unreachable!(),
         );
         ProjectedExpectationsBuilder {
@@ -183,6 +233,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::borrow::BorrowedOrOwned;
+    use crate::expectations::EqualityExpectations;
     use crate::projection::ProjectedExpectations;
     use crate::tests::TestExpectation;
     use crate::{CheckResult, ExpectProjection, Expectation, ExpectationBuilder, expect};
@@ -278,5 +329,24 @@ mod tests {
 
         // Then the expectation was checked
         assert!(*expected.lock().unwrap());
+    }
+
+    #[test]
+    pub fn that_projection_by_ref_works() {
+        #[derive(Debug)]
+        struct Parent {
+            child: Child,
+        }
+
+        #[derive(Debug, Eq, PartialEq)]
+        struct Child {
+            number: u32,
+        }
+        let value = Parent {
+            child: Child { number: 7 },
+        };
+        expect(value)
+            .projected_by_ref(|s| &s.child)
+            .to_equal(Child { number: 7 });
     }
 }

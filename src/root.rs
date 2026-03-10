@@ -1,7 +1,6 @@
 use crate::borrow::BorrowedOrOwned;
 use crate::expectation_list::ExpectationList;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
-use std::borrow::Borrow;
 use std::fmt::Debug;
 
 /// Container for expectations on a value.
@@ -50,7 +49,8 @@ impl<'e, T: Debug> ExpectationBuilder<'e, T> for RootExpectations<'e, T> {
 
 impl<'e, T: Debug> Drop for RootExpectations<'e, T> {
     fn drop(&mut self) {
-        if let CheckResult::Fail(message) = self.expectations.check(self.value.borrow()) {
+        let value = self.value.borrow_self();
+        if let CheckResult::Fail(message) = self.expectations.check(value) {
             panic!("{}", message);
         }
     }
