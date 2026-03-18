@@ -2,11 +2,9 @@ use crate::{CheckResult, ExpectProjection, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
 /// Extension trait for equality expectations for iterables
-pub trait IterableCountExpectations<'e, I, C>
+pub trait IterableCountExpectations<'e, B>
 where
-    I: Debug + 'e,
-    for<'a> &'a I: IntoIterator<Item = &'a C>,
-    C: Debug,
+    B: ExpectationBuilder<'e>,
 {
     /// Make expectations on the number of items in the iterable.
     ///
@@ -21,7 +19,7 @@ where
     /// expect(items).count().to_be_greater_than_or_equal(2);
     /// ```
     /// asserts that `items` contains at least 2 items
-    fn count(self) -> impl ExpectationBuilder<'e, usize>
+    fn count(self) -> impl ExpectationBuilder<'e, Value = usize>
     where
         Self: Sized;
 
@@ -50,18 +48,15 @@ where
     fn to_be_empty(self) -> Self;
 }
 
-impl<'e, I, C, B> IterableCountExpectations<'e, I, C> for B
+impl<'e, I, C, B> IterableCountExpectations<'e, B> for B
 where
     I: Debug + 'e,
     for<'a> &'a I: IntoIterator<Item = &'a C>,
     C: Debug,
-    B: ExpectationBuilder<'e, I>,
+    B: ExpectationBuilder<'e, Value = I>,
 {
-    fn count(self) -> impl ExpectationBuilder<'e, usize>
-    where
-        Self: Sized,
-    {
-        self.projected_by(|it: &I| it.into_iter().count())
+    fn count(self) -> impl ExpectationBuilder<'e, Value = usize> {
+        self.projected_by(|it: &I| Iterator::count(it.into_iter()))
     }
 
     fn to_not_be_empty(self) -> Self {

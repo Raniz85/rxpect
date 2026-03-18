@@ -39,7 +39,10 @@ impl<'e, T: Debug> RootExpectations<'e, T> {
     }
 }
 
-impl<'e, T: Debug> ExpectationBuilder<'e, T> for RootExpectations<'e, T> {
+impl<'e, T: Debug + 'e> ExpectationBuilder<'e> for RootExpectations<'e, T> {
+    /// Target value type for this builder
+    type Value = T;
+
     /// Add an expectation to the list of expectations
     fn to_pass(mut self, expectation: impl Expectation<T> + 'e) -> Self {
         self.expectations.push(expectation);

@@ -35,10 +35,13 @@ pub trait Expectation<T: Debug> {
 }
 
 /// Trait to enable fluent building of expectations
-pub trait ExpectationBuilder<'e, T: Debug> {
+pub trait ExpectationBuilder<'e> {
+    /// Target value type for this builder
+    type Value: Debug + 'e;
+
     /// Expect the value to pass an expectation
     /// This is intended to be used in extension methods to add expectations to the builder
-    fn to_pass(self, expectation: impl Expectation<T> + 'e) -> Self;
+    fn to_pass(self, expectation: impl Expectation<Self::Value> + 'e) -> Self;
 }
 
 /// Create expectations for a value.

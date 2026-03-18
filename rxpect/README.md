@@ -160,8 +160,8 @@ pub trait ToBeEvenExpectations {
     fn to_be_odd(self) -> Self;
 }
 
-// implementation of the extension trait for ExpectationBuilder<'_, u32>
-impl<'e, B: ExpectationBuilder<'e, u32>> ToBeEvenExpectations for B
+// implementation of the extension trait for ExpectationBuilder<'e, Value = u32>
+impl<'e, B: ExpectationBuilder<'e, Value = u32>> ToBeEvenExpectations for B
 {
     fn to_be_even(self) -> B {
         // Expectation implementation with a custom expectation implementation

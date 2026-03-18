@@ -52,10 +52,12 @@ impl<'e, T: Debug> Default for ExpectationList<'e, T> {
     }
 }
 
-impl<'e, T> ExpectationBuilder<'e, T> for ExpectationList<'e, T>
+impl<'e, T> ExpectationBuilder<'e> for ExpectationList<'e, T>
 where
     T: Debug + 'e,
 {
+    type Value = T;
+
     fn to_pass(mut self, expectation: impl Expectation<T> + 'e) -> Self {
         self.push(expectation);
         self

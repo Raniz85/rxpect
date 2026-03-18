@@ -83,7 +83,7 @@ pub trait OrderExpectations<'e, T> {
 impl<'e, T, B> OrderExpectations<'e, T> for B
 where
     T: PartialOrd + Debug + 'e,
-    B: ExpectationBuilder<'e, T>,
+    B: ExpectationBuilder<'e, Value = T>,
 {
     fn to_be_less_than(self, value: T) -> Self {
         self.to_pass(PredicateExpectation::new(

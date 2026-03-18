@@ -128,7 +128,7 @@ where
     /// expect(text).length().to_be_greater_than_or_equal(2);
     /// ```
     /// asserts that `text` has a length of at least 2
-    fn length(self) -> impl ExpectationBuilder<'e, usize>
+    fn length(self) -> impl ExpectationBuilder<'e, Value = usize>
     where
         Self: Sized;
 }
@@ -136,7 +136,7 @@ where
 impl<'e, T, B> StringExpectations<'e, T> for B
 where
     T: AsRef<str> + Debug + 'e,
-    B: ExpectationBuilder<'e, T>,
+    B: ExpectationBuilder<'e, Value = T>,
 {
     fn to_contain(self, substring: &'e str) -> Self {
         self.to_pass(PredicateExpectation::new(
@@ -224,7 +224,7 @@ where
         ))
     }
 
-    fn length(self) -> impl ExpectationBuilder<'e, usize>
+    fn length(self) -> impl ExpectationBuilder<'e, Value = usize>
     where
         Self: Sized,
     {

@@ -4,11 +4,10 @@ use itertools::Itertools;
 use std::fmt::Debug;
 
 /// Extension trait for equality expectations for iterables
-pub trait IterableItemEqualityExpectations<I, C>
+pub trait IterableItemEqualityExpectations<'e, B, C>
 where
-    I: Debug,
-    for<'a> &'a I: IntoIterator<Item = &'a C>,
-    C: PartialEq + Debug,
+    B: ExpectationBuilder<'e>,
+    C: PartialEq + Debug + 'e,
 {
     /// Expect an iterable to contain at least one value equal to another value
     /// ```
@@ -62,12 +61,12 @@ where
     fn to_be_equivalent_to_in_any_order(self, values: impl IntoIterator<Item = C>) -> Self;
 }
 
-impl<'e, I, C, B> IterableItemEqualityExpectations<I, C> for B
+impl<'e, I, C, B> IterableItemEqualityExpectations<'e, B, C> for B
 where
     I: Debug,
     for<'a> &'a I: IntoIterator<Item = &'a C>,
     C: PartialEq + Debug + 'e,
-    B: ExpectationBuilder<'e, I>,
+    B: ExpectationBuilder<'e, Value = I>,
 {
     fn to_contain_equal_to(self, value: C) -> Self {
         self.to_pass(ContainsEqualToExpectation(vec![value]))
@@ -187,7 +186,7 @@ mod tests {
     #[should_panic]
     pub fn that_empty_vec_does_not_contain_an_item() {
         // Given an empty vec
-        let value = vec![];
+        let value: Vec<u32> = vec![];
 
         // Expect the to_contain_equal_to expectation to fail
         expect(value).to_contain_equal_to(1);
@@ -209,7 +208,7 @@ mod tests {
         let value = vec![1];
 
         // Expect the to_contain_equal_to_all_of expectation to pass with an empty list
-        expect(value).to_contain_equal_to_all_of([]);
+        expect(value).to_contain_equal_to_all_of(Vec::<i32>::new());
     }
 
     #[test]

@@ -90,7 +90,7 @@ pub struct ProjectedExpectationsBuilder<'e, P, T, U>
 where
     T: Debug + 'e,
     U: Debug + 'e,
-    P: ExpectationBuilder<'e, T>,
+    P: ExpectationBuilder<'e, Value = T>,
 {
     parent: P,
     expectations: Rc<RefCell<ExpectationList<'e, U>>>,
@@ -101,7 +101,7 @@ impl<'e, P, T, U> ProjectedExpectationsBuilder<'e, P, T, U>
 where
     T: Debug + 'e,
     U: Debug + 'e,
-    P: ExpectationBuilder<'e, T>,
+    P: ExpectationBuilder<'e, Value = T>,
 {
     /// Create a `ProjectedExpectationsBuilder` from a pre-built expectation and its shared list.
     /// Used by variant-extracting builders (e.g. `to_be_ok_and`).
@@ -125,12 +125,14 @@ where
     }
 }
 
-impl<'e, P, T, U> ExpectationBuilder<'e, U> for ProjectedExpectationsBuilder<'e, P, T, U>
+impl<'e, P, T, U> ExpectationBuilder<'e> for ProjectedExpectationsBuilder<'e, P, T, U>
 where
     T: Debug + 'e,
     U: Debug + 'e,
-    P: ExpectationBuilder<'e, T>,
+    P: ExpectationBuilder<'e, Value = T>,
 {
+    type Value = U;
+
     fn to_pass(self, expectation: impl Expectation<U> + 'e) -> Self {
         self.expectations.borrow_mut().push(expectation);
         self
@@ -159,7 +161,7 @@ where
     fn projected_by<F>(self, projection: F) -> ProjectedExpectationsBuilder<'e, Self, T, U>
     where
         F: Fn(&T) -> U + 'e,
-        Self: Sized + ExpectationBuilder<'e, T>;
+        Self: Sized + ExpectationBuilder<'e, Value = T>;
 
     /// Add expectations on a projected reference.
     ///
@@ -190,14 +192,14 @@ where
     fn projected_by_ref<F>(self, projection: F) -> ProjectedExpectationsBuilder<'e, Self, T, U>
     where
         F: (for<'a> Fn(&'a T) -> &'a U) + 'e,
-        Self: Sized + ExpectationBuilder<'e, T>;
+        Self: Sized + ExpectationBuilder<'e, Value = T>;
 }
 
 impl<'e, T, U, B> ExpectProjection<'e, T, U> for B
 where
     T: Debug + 'e,
     U: Debug + 'e,
-    B: ExpectationBuilder<'e, T>,
+    B: ExpectationBuilder<'e, Value = T>,
 {
     fn projected_by<F>(self, projection: F) -> ProjectedExpectationsBuilder<'e, Self, T, U>
     where

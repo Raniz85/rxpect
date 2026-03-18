@@ -28,7 +28,7 @@ pub trait BooleanExpectations {
 
 impl<'e, B> BooleanExpectations for B
 where
-    B: ExpectationBuilder<'e, bool> + EqualityExpectations<bool, bool>,
+    B: ExpectationBuilder<'e, Value = bool> + EqualityExpectations<bool, bool>,
 {
     fn to_be_true(self) -> Self {
         self.to_equal(true)

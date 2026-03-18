@@ -75,7 +75,7 @@ where
     /// asserts that the Result is Ok and the chained expectations hold for the Ok value
     fn to_be_ok_and(self) -> ProjectedExpectationsBuilder<'e, Self, Result<T, E>, T>
     where
-        Self: Sized + ExpectationBuilder<'e, Result<T, E>>;
+        Self: Sized + ExpectationBuilder<'e, Value = Result<T, E>>;
 
     /// Expect the Result to be Err and then chain into further expectations
     /// ```
@@ -88,7 +88,7 @@ where
     /// asserts that the Result is Err and the chained expectations hold for the Err value
     fn to_be_err_and(self) -> ProjectedExpectationsBuilder<'e, Self, Result<T, E>, E>
     where
-        Self: Sized + ExpectationBuilder<'e, Result<T, E>>;
+        Self: Sized + ExpectationBuilder<'e, Value = Result<T, E>>;
 }
 
 fn ok_extract<T: Debug, E: Debug>(result: &Result<T, E>) -> Option<BorrowedOrOwned<'_, T>> {
@@ -111,7 +111,7 @@ impl<'e, T, E, B> ResultExpectations<'e, T, E> for B
 where
     T: Debug + 'e,
     E: Debug + 'e,
-    B: ExpectationBuilder<'e, Result<T, E>>,
+    B: ExpectationBuilder<'e, Value = Result<T, E>>,
 {
     fn to_be_ok(self) -> Self {
         self.to_pass(PredicateExpectation::new(
@@ -152,7 +152,7 @@ impl<'e, T, E, B> ProjectedResultExpectations<'e, T, E> for B
 where
     T: Debug + 'e,
     E: Debug + 'e,
-    B: ExpectationBuilder<'e, Result<T, E>>,
+    B: ExpectationBuilder<'e, Value = Result<T, E>>,
 {
     fn to_be_ok_and(self) -> ProjectedExpectationsBuilder<'e, Self, Result<T, E>, T> {
         let (expectation, expectations) =

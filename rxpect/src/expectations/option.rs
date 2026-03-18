@@ -60,7 +60,7 @@ where
     /// asserts that the Option is Some and the chained expectations hold for the Some value
     fn to_be_some_and(self) -> ProjectedExpectationsBuilder<'e, Self, Option<T>, T>
     where
-        Self: Sized + ExpectationBuilder<'e, Option<T>>;
+        Self: Sized + ExpectationBuilder<'e, Value = Option<T>>;
 }
 
 fn some_extract<T: Debug>(option: &Option<T>) -> Option<BorrowedOrOwned<'_, T>> {
@@ -74,7 +74,7 @@ fn some_fail_message<T: Debug>(option: &Option<T>) -> String {
 impl<'e, T, B> OptionExpectations<'e, T> for B
 where
     T: Debug + 'e,
-    B: ExpectationBuilder<'e, Option<T>>,
+    B: ExpectationBuilder<'e, Value = Option<T>>,
 {
     fn to_be_some(self) -> Self {
         self.to_pass(PredicateExpectation::new(
@@ -105,7 +105,7 @@ where
 impl<'e, T, B> ProjectedOptionExpectations<'e, T> for B
 where
     T: Debug + 'e,
-    B: ExpectationBuilder<'e, Option<T>>,
+    B: ExpectationBuilder<'e, Value = Option<T>>,
 {
     fn to_be_some_and(self) -> ProjectedExpectationsBuilder<'e, Self, Option<T>, T> {
         let (expectation, expectations) =

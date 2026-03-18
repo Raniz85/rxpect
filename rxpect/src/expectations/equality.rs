@@ -30,7 +30,7 @@ impl<'e, T, U, B> EqualityExpectations<T, U> for B
 where
     T: PartialEq<U> + Debug + 'e,
     U: Debug + 'e,
-    B: ExpectationBuilder<'e, T>,
+    B: ExpectationBuilder<'e, Value = T>,
 {
     fn to_equal(self, value: U) -> Self {
         self.to_pass(ToEqualExpectation(value))
