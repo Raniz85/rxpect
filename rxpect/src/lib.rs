@@ -9,7 +9,8 @@ pub use borrow::BorrowedOrOwned;
 pub use expectation_list::ExpectationList;
 pub use projection::ExpectProjection;
 pub use projection::ProjectedExpectationsBuilder;
-pub use root::RootExpectations;
+pub use root::OwnedExpectations;
+pub use root::RefExpectations;
 
 use std::fmt::Debug;
 
@@ -46,14 +47,27 @@ pub trait ExpectationBuilder<'e> {
 
 /// Create expectations for a value.
 /// Used as an entrypoint for fluently building expectations
+///
 /// ```
 /// use rxpect::expect;
 /// use rxpect::expectations::EqualityExpectations;
 ///
 /// expect(1).to_equal(1);
 /// ```
-pub fn expect<'e, T: Debug>(value: T) -> RootExpectations<'e, T> {
-    RootExpectations::new(value)
+///
+/// You can get the value back out if you check all expectations early:
+///
+/// ```
+/// use rxpect::expect;
+/// use rxpect::expectations::EqualityExpectations;
+///
+/// let value: String = expect("Hello World!".to_string())
+///     .to_equal("Hello World!")
+///     .check();
+/// println!("{value}"); // Hello World!
+/// ```
+pub fn expect<'e, T: Debug>(value: T) -> OwnedExpectations<'e, T> {
+    OwnedExpectations::new(value)
 }
 
 /// Create expectations for a reference to a value.
@@ -62,10 +76,12 @@ pub fn expect<'e, T: Debug>(value: T) -> RootExpectations<'e, T> {
 /// use rxpect::expect_ref;
 /// use rxpect::expectations::EqualityExpectations;
 ///
-/// expect_ref(&1).to_equal(1);
+/// let value: String = "Hello World!".to_string();
+/// expect_ref(&value)
+///     .to_equal("Hello World!");
 /// ```
-pub fn expect_ref<T: Debug>(value: &'_ T) -> RootExpectations<'_, T> {
-    RootExpectations::new_ref(value)
+pub fn expect_ref<T: Debug>(value: &'_ T) -> RefExpectations<'_, T> {
+    RefExpectations::new(value)
 }
 
 #[cfg(test)]
