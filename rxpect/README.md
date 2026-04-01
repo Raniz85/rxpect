@@ -2,14 +2,11 @@
 
 A Rust library for fluently building expectations in tests.
 
-## Another library for fluent assertions?
-
-None of the other libraries worked quite like I wanted them to.
-I also wanted to test my ideas about how a fluent assertion library in Rust could work.
-
 ## What is fluent assertions?
 
-Test assertions that are readable.
+Test assertions that are readable, with output that is understandable.
+
+![The README shows a screenshot of colored diff output here, but that won't work with rustdoc](./diff_color.png)
 
 If we're only asserting on equality, `assert_eq!` goes a long way,
 but when assertions become more complex, it breaks down.
@@ -36,6 +33,11 @@ Expectation failed (a ⊇ b)
 a: `[1, 2, 3, 4, 5, 6]`
 b: `[7]`
 ```
+
+## Another library for fluent assertions?
+
+None of the other libraries worked quite like I wanted them to.
+I also wanted to test my ideas about how a fluent assertion library in Rust could work.
 
 ## What about the name?
 
@@ -64,6 +66,27 @@ running 1 test
 test tests::that_one_plus_one_equals_two ... ok
 
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+```
+
+You can even chain multiple assertions on the same value indefinitely, and all errors will be reported:
+
+```rust,no_run
+use rxpect::expect;
+use rxpect::expectations::{EqualityExpectations, OrderExpectations};
+
+expect(0)
+    .to_equal(2)
+    .to_be_greater_than(1);
+```
+
+```shell
+thread 'main' (57062) panicked at /home/raniz/src/rxpect/rxpect/src/root.rs:53:17:
+Expectation failed (expected == actual)
+expected: `2`
+  actual: `0`
+Expectation failed (a > b)
+a: `0`
+b: `1`
 ```
 
 For complex types, there exists the concept of projections,
