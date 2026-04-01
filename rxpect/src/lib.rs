@@ -1,5 +1,6 @@
 #![doc=include_str!("../README.md")]
 mod borrow;
+pub mod diff;
 mod expectation_list;
 pub mod expectations;
 mod projection;

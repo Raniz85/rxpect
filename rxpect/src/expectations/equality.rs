@@ -1,4 +1,7 @@
+use crate::diff::Color;
+use crate::diff::diff_pretty_debug;
 use crate::{CheckResult, Expectation, ExpectationBuilder};
+use colored::Colorize;
 use std::fmt::Debug;
 
 /// Extension trait for equality expectations
@@ -48,6 +51,13 @@ where
     fn check(&self, value: &T) -> CheckResult {
         if value.eq(&self.0) {
             CheckResult::Pass
+        } else if cfg!(feature = "diff") {
+            let diff = diff_pretty_debug(&self.0, value);
+            CheckResult::Fail(format!(
+                "Expectation failed ({} == {})\n{diff}",
+                "expected".on_ansi_color(Color::RemovedRow),
+                "actual".on_ansi_color(Color::AddedRow)
+            ))
         } else {
             CheckResult::Fail(format!(
                 "Expectation failed (expected == actual)\nexpected: `{:?}`\n  actual: `{:?}`",

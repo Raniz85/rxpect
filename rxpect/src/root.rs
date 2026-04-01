@@ -27,7 +27,10 @@ impl<'e, T: Debug> OwnedExpectations<'e, T> {
 
     /// Run all expectations and return the owned value.
     pub fn check(mut self) -> T {
-        let value = self.value.take().expect("Check can only be called once, hence value must be Some");
+        let value = self
+            .value
+            .take()
+            .expect("Check can only be called once, hence value must be Some");
         let result = self.expectations.check(&value);
         if let CheckResult::Fail(message) = result {
             panic!("{}", message);
@@ -48,10 +51,10 @@ impl<'e, T: Debug + 'e> ExpectationBuilder<'e> for OwnedExpectations<'e, T> {
 impl<'e, T: Debug> Drop for OwnedExpectations<'e, T> {
     fn drop(&mut self) {
         // If check has been called value is None here and we shouldn't recheck
-        if let Some(value) = self.value.take() {
-            if let CheckResult::Fail(message) = self.expectations.check(&value) {
-                panic!("{}", message);
-            }
+        if let Some(value) = self.value.take()
+            && let CheckResult::Fail(message) = self.expectations.check(&value)
+        {
+            panic!("{}", message);
         }
     }
 }
