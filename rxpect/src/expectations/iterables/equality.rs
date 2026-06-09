@@ -131,6 +131,13 @@ where
             _ => false,
         }) {
             CheckResult::Pass
+        } else if cfg!(feature = "diff") {
+            let diff = diff_pretty_debug(&self.0, value);
+            CheckResult::Fail(format!(
+                "Expectation failed ({} == {})\n{diff}",
+                "expected".on_ansi_color(Color::RemovedRow),
+                "actual".on_ansi_color(Color::AddedRow)
+            ))
         } else {
             CheckResult::Fail(format!(
                 "Expectation failed (a == b)\na: `{:?}`\nb: `{:?}`",
@@ -182,7 +189,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::{
-        IterableIsEquivalentToInAnyOrderExpectation,
+        IterableIsEquivalentToExpectation, IterableIsEquivalentToInAnyOrderExpectation,
         IterableItemEqualityExpectations,
     };
     use crate::diff::{Color, diff_pretty_debug};
@@ -288,6 +295,29 @@ mod tests {
 
         // Expect the to_be_equivalent_to expectation to fail with an unequal collection
         expect(value).to_be_equivalent_to_in_any_order(non_equivalent);
+    }
+
+    #[cfg(feature = "diff")]
+    #[test]
+    pub fn that_equivalent_to_with_diffing_returns_colored_diff() {
+        // Given an actual collection and an expected collection that differ
+        let actual = vec![1, 2, 3];
+        let expected = vec![1, 4, 3];
+
+        // When the equivalence expectation is checked
+        let result = IterableIsEquivalentToExpectation(expected.clone()).check(&actual);
+
+        // Then the failure message contains the colored diff of expected against actual
+        let message = match result {
+            CheckResult::Fail(message) => message,
+            _ => "Passed".to_string(),
+        };
+        expect(message).to_equal(format!(
+            "Expectation failed ({} == {})\n{}",
+            "expected".on_ansi_color(Color::RemovedRow),
+            "actual".on_ansi_color(Color::AddedRow),
+            diff_pretty_debug(&expected, &actual)
+        ));
     }
 
     #[cfg(feature = "diff")]
