@@ -13,3 +13,6 @@ test:
     cargo test
 
 ci: checkFormat lint test
+
+prep_commit: format fix_lints test
+
