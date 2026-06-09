@@ -1,5 +1,7 @@
 use super::predicate::PredicateExpectation;
-use crate::{ExpectProjection, ExpectationBuilder};
+use crate::diff::{Color, diff_pretty_debug};
+use crate::{CheckResult, ExpectProjection, Expectation, ExpectationBuilder};
+use colored::Colorize;
 use std::fmt::Debug;
 
 /// Expectations for strings
@@ -169,19 +171,11 @@ where
     }
 
     fn to_start_with(self, prefix: &'e str) -> Self {
-        self.to_pass(PredicateExpectation::new(
-            prefix,
-            |a: &T, b| a.as_ref().starts_with(b),
-            |a: &T, b| format!("Expected \"{}\" to start with \"{b}\"", a.as_ref()),
-        ))
+        self.to_pass(StartsWithExpectation(prefix))
     }
 
     fn to_end_with(self, suffix: &'e str) -> Self {
-        self.to_pass(PredicateExpectation::new(
-            suffix,
-            |a: &T, b| a.as_ref().ends_with(b),
-            |a: &T, b| format!("Expected \"{}\" to end with \"{b}\"", a.as_ref()),
-        ))
+        self.to_pass(EndsWithExpectation(suffix))
     }
 
     fn to_be_empty(self) -> Self {
@@ -232,10 +226,68 @@ where
     }
 }
 
+struct StartsWithExpectation<'e>(&'e str);
+
+struct EndsWithExpectation<'e>(&'e str);
+
+impl<T> Expectation<T> for StartsWithExpectation<'_>
+where
+    T: AsRef<str> + Debug,
+{
+    fn check(&self, value: &T) -> CheckResult {
+        let actual = value.as_ref();
+        if actual.starts_with(self.0) {
+            CheckResult::Pass
+        } else if cfg!(feature = "diff") {
+            let lead: String = actual.chars().take(self.0.chars().count()).collect();
+            let diff = diff_pretty_debug(&self.0, &lead);
+            CheckResult::Fail(format!(
+                "Expected \"{actual}\" to start with \"{}\"\n{diff}",
+                self.0
+            ))
+        } else {
+            CheckResult::Fail(format!(
+                "Expected \"{actual}\" to start with \"{}\"",
+                self.0
+            ))
+        }
+    }
+}
+
+impl<T> Expectation<T> for EndsWithExpectation<'_>
+where
+    T: AsRef<str> + Debug,
+{
+    fn check(&self, value: &T) -> CheckResult {
+        let actual = value.as_ref();
+        if actual.ends_with(self.0) {
+            CheckResult::Pass
+        } else if cfg!(feature = "diff") {
+            let skip = actual
+                .chars()
+                .count()
+                .saturating_sub(self.0.chars().count());
+            let tail: String = actual.chars().skip(skip).collect();
+            let diff = diff_pretty_debug(&self.0, &tail);
+            CheckResult::Fail(format!(
+                "Expected \"{actual}\" to end with \"{}\"\n{diff}",
+                self.0,
+            ))
+        } else {
+            CheckResult::Fail(format!("Expected \"{actual}\" to end with \"{}\"", self.0))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::{EndsWithExpectation, StartsWithExpectation};
+    use crate::diff::{Color, diff_pretty_debug};
     use crate::expect;
+    use crate::expectations::EqualityExpectations;
     use crate::expectations::string::StringExpectations;
+    use crate::{CheckResult, Expectation};
+    use colored::Colorize;
     use rstest::rstest;
 
     #[rstest]
@@ -336,7 +388,6 @@ mod tests {
         #[case] actual: &str,
         #[case] length: usize,
     ) {
-        use crate::expectations::EqualityExpectations;
         expect(actual).length().to_equal(length);
     }
 
@@ -449,6 +500,48 @@ mod tests {
     #[should_panic]
     fn that_to_be_alphabetic_does_not_pass_when_string_is_not_alphabetic(#[case] actual: &str) {
         expect(actual).to_be_alphabetic();
+    }
+
+    #[cfg(feature = "diff")]
+    #[test]
+    fn that_start_with_with_diffing_returns_colored_diff() {
+        // Given a string that does not start with the expected prefix
+        let actual = "Hello, world!";
+        let prefix = "Hxllo";
+
+        // When the starts-with expectation is checked
+        let result = StartsWithExpectation(prefix).check(&actual);
+
+        // Then the failure message contains a colored diff of the prefix against the leading slice
+        let message = match result {
+            CheckResult::Fail(message) => message,
+            _ => "Passed".to_string(),
+        };
+        expect(message).to_equal(format!(
+            "Expected \"{actual}\" to start with \"{prefix}\"\n{}",
+            diff_pretty_debug(&prefix, &"Hello".to_string())
+        ));
+    }
+
+    #[cfg(feature = "diff")]
+    #[test]
+    fn that_end_with_with_diffing_returns_colored_diff() {
+        // Given a string that does not end with the expected suffix
+        let actual = "Hello, world!";
+        let suffix = "warld!";
+
+        // When the ends-with expectation is checked
+        let result = EndsWithExpectation(suffix).check(&actual);
+
+        // Then the failure message contains a colored diff of the suffix against the trailing slice
+        let message = match result {
+            CheckResult::Fail(message) => message,
+            _ => "Passed".to_string(),
+        };
+        expect(message).to_equal(format!(
+            "Expected \"{actual}\" to end with \"{suffix}\"\n{}",
+            diff_pretty_debug(&suffix, &"world!".to_string())
+        ));
     }
 
     #[rstest]
