@@ -1,4 +1,6 @@
+use crate::diff::{Color, diff_pretty_debug};
 use crate::{CheckResult, Expectation, ExpectationBuilder};
+use colored::Colorize;
 use itertools::EitherOrBoth::Both;
 use itertools::Itertools;
 use std::fmt::Debug;
@@ -158,9 +160,19 @@ where
         }
         if remaining.is_empty() && extras.is_empty() {
             CheckResult::Pass
+        } else if cfg!(feature = "diff") && remaining.len() == 1 && extras.len() == 1 {
+            // Special case when there is only one element differing
+            let remaining = remaining[0];
+            let extra = extras[0];
+            let diff = diff_pretty_debug(remaining, extra);
+            CheckResult::Fail(format!(
+                "Expectation failed ({} ≅ {}, any order)\nSingle differing element\n{diff}",
+                "expected".on_ansi_color(Color::RemovedRow),
+                "actual".on_ansi_color(Color::AddedRow)
+            ))
         } else {
             CheckResult::Fail(format!(
-                "Expectation failed (a ≅ b, any order)\na: `{:?}`\nb: `{:?}`\nextra: `{:?}`\nunmatched: `{:?}`",
+                "Expectation failed (expected ≅ actual, any order)\n  actual: `{:?}`\nexpected: `{:?}`\nextra: `{:?}`\nunmatched: `{:?}`",
                 value, self.0, extras, remaining
             ))
         }
@@ -169,8 +181,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::IterableItemEqualityExpectations;
-    use crate::expect;
+    use super::{
+        IterableIsEquivalentToInAnyOrderExpectation,
+        IterableItemEqualityExpectations,
+    };
+    use crate::diff::{Color, diff_pretty_debug};
+    use crate::expectations::EqualityExpectations;
+    use crate::{CheckResult, Expectation, expect};
+    use colored::Colorize;
     use rstest::rstest;
 
     #[test]
@@ -270,5 +288,28 @@ mod tests {
 
         // Expect the to_be_equivalent_to expectation to fail with an unequal collection
         expect(value).to_be_equivalent_to_in_any_order(non_equivalent);
+    }
+
+    #[cfg(feature = "diff")]
+    #[test]
+    pub fn that_equivalent_to_in_any_order_with_single_difference_returns_colored_diff() {
+        // Given an actual collection and an expected collection that differ in a single element
+        let actual = vec![1, 2, 3];
+        let expected = vec![1, 4, 3];
+
+        // When the any-order equivalence expectation is checked
+        let result = IterableIsEquivalentToInAnyOrderExpectation(expected).check(&actual);
+
+        // Then the failure message contains the colored diff of the single differing element
+        let message = match result {
+            CheckResult::Fail(message) => message,
+            _ => "Passed".to_string(),
+        };
+        expect(message).to_equal(format!(
+            "Expectation failed ({} ≅ {}, any order)\nSingle differing element\n{}",
+            "expected".on_ansi_color(Color::RemovedRow),
+            "actual".on_ansi_color(Color::AddedRow),
+            diff_pretty_debug(&4, &2)
+        ));
     }
 }
