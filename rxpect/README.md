@@ -225,21 +225,18 @@ expect(2).to_be_even();
 expect(3).to_be_odd();
 ```
 
+## Credits
+Fluent assertions is not my idea. Plenty of other projects implement the idea, both in Rust and other languages.
 
-## I don't like it
+Here's a list of similar tools that I have used before and may or may not have inspired features in RXpect:
 
-Use something else.
-Here's a bunch of other crates that also does fluent expectations,
-in no particular order:
+- [https://fluentassertions.com](Fluent Assertions (.NET))
+- [https://jestjs.io](Jest (JS))
+- [https://assertj.github.io](AssertJ (Java))
 
-- <https://crates.io/crates/totems>
-- <https://crates.io/crates/lets_expect>
-- <https://crates.io/crates/fluent-assertions>
-- <https://crates.io/crates/xpct>
-- <https://crates.io/crates/expect>
-- <https://crates.io/crates/fluent-asserter>
-- <https://crates.io/crates/spectral>
-- <https://crates.io/crates/assertables>
-- <https://crates.io/crates/speculoos>
-- <https://crates.io/crates/assert>
-- <https://crates.io/crates/rassert>
+Huge thanks also goes out to the dependencies (which I try to keep minimal), without which, some functionality would have been a lot harder to implement:
+
+- [Similar](https://insta.rs/similar) for diffing
+- [Itertools](https://github.com/rust-itertools/itertools) for working with iterables
+- [Colored](https://github.com/colored-rs/colored) for coloring output
+- [rstest](https://github.com/la10736/rstest) for making writing parameterised tests bearable
