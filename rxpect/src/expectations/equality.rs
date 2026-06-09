@@ -69,8 +69,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::EqualityExpectations;
-    use crate::expect;
+    use super::{EqualityExpectations, ToEqualExpectation};
+    use crate::diff::{Color, diff_pretty_debug};
+    use crate::{CheckResult, ExpectProjection, Expectation, expect};
+    use colored::Colorize;
     use rstest::rstest;
     use std::fmt::Debug;
 
@@ -96,5 +98,26 @@ mod tests {
 
         // Expect the to_equal expectation to fail with an identical value
         expect(value).to_equal(2);
+    }
+
+    #[cfg(feature = "diff")]
+    #[test]
+    pub fn that_equal_with_diffing_returns_colored_diff() {
+        // Given two strings that differ
+        let a = "One two three".to_string();
+        let b = "One three two".to_string();
+
+        let result = ToEqualExpectation(b.clone()).check(&a);
+        expect(result)
+            .projected_by(|r| match r {
+                CheckResult::Fail(message) => message.clone(),
+                _ => "Passed".to_string(),
+            })
+            .to_equal(format!(
+                "Expectation failed ({} == {})\n{}",
+                "expected".on_ansi_color(Color::RemovedRow),
+                "actual".on_ansi_color(Color::AddedRow),
+                diff_pretty_debug(&b, &a)
+            ));
     }
 }
