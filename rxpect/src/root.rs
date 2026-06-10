@@ -25,13 +25,20 @@ impl<'e, T: Debug> OwnedExpectations<'e, T> {
         }
     }
 
-    /// Run all expectations and return the owned value.
-    pub fn check(mut self) -> T {
+    /// Run all expectations and return the owned value and the result.
+    pub fn check_result(mut self) -> (T, CheckResult) {
         let value = self
             .value
             .take()
             .expect("Check can only be called once, hence value must be Some");
         let result = self.expectations.check(&value);
+        (value, result)
+    }
+
+    /// Run all expectations and return the owned value.
+    /// Panics if the result is a failure
+    pub fn check(self) -> T {
+        let (value, result) = self.check_result();
         if let CheckResult::Fail(message) = result {
             panic!("{}", message);
         }
@@ -106,6 +113,7 @@ impl<'e, T: Debug> Drop for RefExpectations<'e, T> {
 
 #[cfg(test)]
 mod tests {
+    use crate::expectations::{BooleanExpectations, PredicateExpectation};
     use crate::tests::TestExpectation;
     use crate::{CheckResult, ExpectationBuilder, expect, expect_ref};
 
@@ -174,5 +182,23 @@ mod tests {
 
         // Expect a panic when checked
         expectations.check();
+    }
+
+    #[test]
+    pub fn that_check_result_returns_value_and_result() {
+        // Given an expectation that fails
+        let (expectation, _) = TestExpectation::new(CheckResult::Fail("message".to_owned()));
+
+        // And expectations containing it
+        let expectations = expect(true).to_pass(expectation);
+
+        // Expect a panic when checked
+        let (value, result) = expectations.check_result();
+        expect(value).to_be_true();
+        expect(result).to_pass(PredicateExpectation::new(
+            (),
+            |actual, _| matches!(actual, CheckResult::Fail(_)),
+            |actual, _| format!("Expected CheckResult::Fail, but was {:?}", actual),
+        ));
     }
 }
