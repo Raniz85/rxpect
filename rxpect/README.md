@@ -6,7 +6,23 @@ A Rust library for fluently building expectations in tests.
 
 Test assertions that are readable, with output that is understandable.
 
-![The README shows a screenshot of colored diff output here, but that won't work with rustdoc](./diff_color.png)
+<pre>
+failures:
+
+---- fail stdout ----
+
+thread 'main' (100481) panicked at .../entity.rs:57:13
+Expectation failed (<span style="background: #ffd7d7">expected</span> == <span style="background: #d7ffd7">actual</span>)
+ TestEntity {
+<span style="background: #ffd7d7">-     id: <span style="background: #ffafaf">"foo",</span></span>
+<span style="background: #d7ffd7">+     id: <span style="background: #afffaf">"bar",</span></span>
+      value: 7,
+<span style="background: #ffd7d7">-     content: "The quick brown <span style="background: #ffafaf">fox jumps over the dog",</span></span>
+<span style="background: #ffd7d7">-     content_length: <span style="background: #ffafaf">43,</span></span>
+<span style="background: #d7ffd7">+     content: "The <span style="background: #afffaf">lazy dog eats the </span>quick brow <span style="background: #afffaf">fox",</span></span>
+<span style="background: #d7ffd7">+     content_length: <span style="background: #afffaf">37,</span></span>
+ }
+</pre>
 
 If we're only asserting on equality, `assert_eq!` goes a long way,
 but when assertions become more complex, it breaks down.
@@ -167,8 +183,9 @@ The easiest way to find them is to look at the various traits in the [`expectati
 RXpect is built with extensibility in mind.
 In fact, all bundled expectations are implemented in the same way as custom expectations should be - as extension traits.
 
-To add a custom expectation, add a new extension trait and implement it for the `ExtensionBuilder`,
-adding any restrictions on trait implementations of the type under test that you need.
+To add a custom expectation, add a new extension trait and implement it for the `ExpectationBuilder` trait,
+adding any restrictions on trait implementations of the type under test that you need through the type system (i.e. using generics or `where` clauses).
+Have a look at the existing extension traits for inspiration.
 
 ```rust
 use rxpect::expect;
