@@ -1,5 +1,4 @@
 use colored::Colorize;
-use itertools::Itertools;
 use similar::{ChangeTag, InlineChange, TextDiff};
 use std::fmt::Debug;
 
@@ -69,7 +68,11 @@ pub fn diff_pretty(a: &str, b: &str) -> String {
             ChangeTag::Equal => output.push(format!(" {}", change)),
         }
     }
-    output.iter().join("").trim_end().to_string()
+    output
+        .into_iter()
+        .collect::<String>()
+        .trim_end()
+        .to_string()
 }
 
 fn contains_ref<T>(haystack: &[&T], needle: &T) -> bool {
@@ -89,17 +92,17 @@ pub fn format_flagged_list<T: Debug>(
                 format!("{:#?},", item)
                     .split('\n')
                     .map(|line| format!("{}    {}", prefix, line).on_ansi_color(color))
-                    .join("\n")
+                    .map(|line| format!("{}\n", line))
+                    .collect::<String>()
             } else {
                 format!("{:#?},", item)
                     .split('\n')
-                    .map(|line| format!("     {}", line))
-                    .join("\n")
+                    .map(|line| format!("     {}\n", line))
+                    .collect::<String>()
             }
         })
-        .map(|item| format!("{item}\n"))
-        .collect_vec();
-    format!("[\n{}]", diff_items.iter().join(""))
+        .collect::<Vec<_>>();
+    format!("[\n{}]", diff_items.into_iter().collect::<String>())
 }
 
 #[cfg(test)]

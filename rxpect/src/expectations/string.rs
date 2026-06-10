@@ -1,6 +1,8 @@
 use super::predicate::PredicateExpectation;
+#[cfg(feature = "diff")]
 use crate::diff::{Color, diff_pretty, diff_pretty_debug};
 use crate::{CheckResult, ExpectProjection, Expectation, ExpectationBuilder};
+#[cfg(feature = "diff")]
 use colored::Colorize;
 use std::fmt::Debug;
 
@@ -255,18 +257,23 @@ where
         let value = value.as_ref();
         if value.eq(self.0) {
             CheckResult::Pass
-        } else if cfg!(feature = "diff") {
-            let diff = diff_pretty(self.0, value);
-            CheckResult::Fail(format!(
-                "Expectation failed ({} == {})\n{diff}",
-                "expected".on_ansi_color(Color::RemovedRow),
-                "actual".on_ansi_color(Color::AddedRow)
-            ))
         } else {
-            CheckResult::Fail(format!(
-                "Expectation failed (expected == actual)\nexpected: `{:?}`\n  actual: `{:?}`",
-                &self.0, value
-            ))
+            #[cfg(feature = "diff")]
+            {
+                let diff = diff_pretty(self.0, value);
+                CheckResult::Fail(format!(
+                    "Expectation failed ({} == {})\n{diff}",
+                    "expected".on_ansi_color(Color::RemovedRow),
+                    "actual".on_ansi_color(Color::AddedRow)
+                ))
+            }
+            #[cfg(not(feature = "diff"))]
+            {
+                CheckResult::Fail(format!(
+                    "Expectation failed (expected == actual)\nexpected: `{:?}`\n  actual: `{:?}`",
+                    &self.0, value
+                ))
+            }
         }
     }
 }
@@ -283,18 +290,23 @@ where
         let actual = value.as_ref();
         if actual.starts_with(self.0) {
             CheckResult::Pass
-        } else if cfg!(feature = "diff") {
-            let lead: String = actual.chars().take(self.0.chars().count()).collect();
-            let diff = diff_pretty_debug(&self.0, &lead);
-            CheckResult::Fail(format!(
-                "Expected \"{actual}\" to start with \"{}\"\n{diff}",
-                self.0
-            ))
         } else {
-            CheckResult::Fail(format!(
-                "Expected \"{actual}\" to start with \"{}\"",
-                self.0
-            ))
+            #[cfg(feature = "diff")]
+            {
+                let lead: String = actual.chars().take(self.0.chars().count()).collect();
+                let diff = diff_pretty_debug(&self.0, &lead);
+                CheckResult::Fail(format!(
+                    "Expected \"{actual}\" to start with \"{}\"\n{diff}",
+                    self.0
+                ))
+            }
+            #[cfg(not(feature = "diff"))]
+            {
+                CheckResult::Fail(format!(
+                    "Expected \"{actual}\" to start with \"{}\"",
+                    self.0
+                ))
+            }
         }
     }
 }
@@ -307,30 +319,38 @@ where
         let actual = value.as_ref();
         if actual.ends_with(self.0) {
             CheckResult::Pass
-        } else if cfg!(feature = "diff") {
-            let skip = actual
-                .chars()
-                .count()
-                .saturating_sub(self.0.chars().count());
-            let tail: String = actual.chars().skip(skip).collect();
-            let diff = diff_pretty_debug(&self.0, &tail);
-            CheckResult::Fail(format!(
-                "Expected \"{actual}\" to end with \"{}\"\n{diff}",
-                self.0,
-            ))
         } else {
-            CheckResult::Fail(format!("Expected \"{actual}\" to end with \"{}\"", self.0))
+            #[cfg(feature = "diff")]
+            {
+                let skip = actual
+                    .chars()
+                    .count()
+                    .saturating_sub(self.0.chars().count());
+                let tail: String = actual.chars().skip(skip).collect();
+                let diff = diff_pretty_debug(&self.0, &tail);
+                CheckResult::Fail(format!(
+                    "Expected \"{actual}\" to end with \"{}\"\n{diff}",
+                    self.0,
+                ))
+            }
+            #[cfg(not(feature = "diff"))]
+            {
+                CheckResult::Fail(format!("Expected \"{actual}\" to end with \"{}\"", self.0))
+            }
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "diff")]
     use super::{EndsWithExpectation, StartsWithExpectation, ToEqualStrExpectation};
+    #[cfg(feature = "diff")]
     use crate::diff::diff_pretty_debug;
     use crate::expect;
     use crate::expectations::EqualityExpectations;
     use crate::expectations::string::StringExpectations;
+    #[cfg(feature = "diff")]
     use crate::{CheckResult, Expectation};
 
     use rstest::rstest;
@@ -640,6 +660,7 @@ mod tests {
         expect(actual).to_equal_str("hello");
     }
 
+    #[cfg(feature = "diff")]
     #[test]
     fn that_to_equal_str_uses_the_actual_string_for_diffing() {
         // Given an error message of two strings that are not equal

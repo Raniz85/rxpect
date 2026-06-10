@@ -1,6 +1,7 @@
-use crate::diff::Color;
-use crate::diff::diff_pretty_debug;
+#[cfg(feature = "diff")]
+use crate::diff::{Color, diff_pretty_debug};
 use crate::{CheckResult, Expectation, ExpectationBuilder};
+#[cfg(feature = "diff")]
 use colored::Colorize;
 use std::fmt::Debug;
 
@@ -51,27 +52,38 @@ where
     fn check(&self, value: &T) -> CheckResult {
         if value.eq(&self.0) {
             CheckResult::Pass
-        } else if cfg!(feature = "diff") {
-            let diff = diff_pretty_debug(&self.0, value);
-            CheckResult::Fail(format!(
-                "Expectation failed ({} == {})\n{diff}",
-                "expected".on_ansi_color(Color::RemovedRow),
-                "actual".on_ansi_color(Color::AddedRow)
-            ))
         } else {
-            CheckResult::Fail(format!(
-                "Expectation failed (expected == actual)\nexpected: `{:?}`\n  actual: `{:?}`",
-                &self.0, value
-            ))
+            #[cfg(feature = "diff")]
+            {
+                let diff = diff_pretty_debug(&self.0, value);
+                CheckResult::Fail(format!(
+                    "Expectation failed ({} == {})\n{diff}",
+                    "expected".on_ansi_color(Color::RemovedRow),
+                    "actual".on_ansi_color(Color::AddedRow)
+                ))
+            }
+            #[cfg(not(feature = "diff"))]
+            {
+                CheckResult::Fail(format!(
+                    "Expectation failed (expected == actual)\nexpected: `{:?}`\n  actual: `{:?}`",
+                    &self.0, value
+                ))
+            }
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{EqualityExpectations, ToEqualExpectation};
+    use super::EqualityExpectations;
+    #[cfg(feature = "diff")]
+    use super::ToEqualExpectation;
+    #[cfg(feature = "diff")]
     use crate::diff::{Color, diff_pretty_debug};
-    use crate::{CheckResult, ExpectProjection, Expectation, expect};
+    use crate::expect;
+    #[cfg(feature = "diff")]
+    use crate::{CheckResult, ExpectProjection, Expectation};
+    #[cfg(feature = "diff")]
     use colored::Colorize;
     use rstest::rstest;
     use std::fmt::Debug;

@@ -1,5 +1,7 @@
+#[cfg(feature = "diff")]
 use crate::diff::{Color, diff_pretty_debug, format_flagged_list};
 use crate::{CheckResult, Expectation, ExpectationBuilder};
+#[cfg(feature = "diff")]
 use colored::Colorize;
 use dedent::dedent;
 use itertools::EitherOrBoth::Both;
@@ -132,18 +134,23 @@ where
             _ => false,
         }) {
             CheckResult::Pass
-        } else if cfg!(feature = "diff") {
-            let diff = diff_pretty_debug(&self.0, value);
-            CheckResult::Fail(format!(
-                "Expectation failed ({} == {})\n{diff}",
-                "expected".on_ansi_color(Color::RemovedRow),
-                "actual".on_ansi_color(Color::AddedRow)
-            ))
         } else {
-            CheckResult::Fail(format!(
-                "Expectation failed (a == b)\na: `{:?}`\nb: `{:?}`",
-                value, self.0
-            ))
+            #[cfg(feature = "diff")]
+            {
+                let diff = diff_pretty_debug(&self.0, value);
+                CheckResult::Fail(format!(
+                    "Expectation failed ({} == {})\n{diff}",
+                    "expected".on_ansi_color(Color::RemovedRow),
+                    "actual".on_ansi_color(Color::AddedRow)
+                ))
+            }
+            #[cfg(not(feature = "diff"))]
+            {
+                CheckResult::Fail(format!(
+                    "Expectation failed (a == b)\na: `{:?}`\nb: `{:?}`",
+                    value, self.0
+                ))
+            }
         }
     }
 }
@@ -169,64 +176,77 @@ where
         }
         if remaining.is_empty() && extras.is_empty() {
             CheckResult::Pass
-        } else if cfg!(feature = "diff") && remaining.len() == 1 && extras.len() == 1 {
-            // Special case when there is only one element differing
-            let remaining = remaining[0];
-            let extra = extras[0];
-            let diff = diff_pretty_debug(remaining, extra);
-            CheckResult::Fail(format!(
-                "Expectation failed ({} == {}, any order)\nSingle differing element\n{diff}",
-                "expected".on_ansi_color(Color::RemovedRow),
-                "actual".on_ansi_color(Color::AddedRow)
-            ))
-        } else if cfg!(feature = "diff") {
-            CheckResult::Fail(format!(
-                dedent!(
-                    r#"
-                Expectation failed ({} == {}, any order)
-                expected: {}
-                actual: {}"#
-                ),
-                "expected".on_ansi_color(Color::RemovedRow),
-                "actual".on_ansi_color(Color::AddedRow),
-                format_flagged_list(
-                    &self.0.iter().collect_vec(),
-                    &remaining,
-                    '-',
-                    Color::RemovedRow
-                ),
-                format_flagged_list(&value, &extras, '+', Color::AddedRow)
-            ))
         } else {
-            CheckResult::Fail(format!(
-                dedent!(
-                    r#"
-                Expectation failed (expected == actual, any order)
-                actual: {}
-                expected: {}
-                extra: {}
-                unmatched: {}"#
-                ),
-                format!("{:#?}", value),
-                format!("{:#?}", self.0),
-                format!("{:#?}", extras),
-                format!("{:#?}", remaining)
-            ))
+            #[cfg(feature = "diff")]
+            {
+                if remaining.len() == 1 && extras.len() == 1 {
+                    // Special case when there is only one element differing
+                    let remaining = remaining[0];
+                    let extra = extras[0];
+                    let diff = diff_pretty_debug(remaining, extra);
+                    CheckResult::Fail(format!(
+                        "Expectation failed ({} == {}, any order)\nSingle differing element\n{diff}",
+                        "expected".on_ansi_color(Color::RemovedRow),
+                        "actual".on_ansi_color(Color::AddedRow)
+                    ))
+                } else {
+                    CheckResult::Fail(format!(
+                        dedent!(
+                            r#"
+                        Expectation failed ({} == {}, any order)
+                        expected: {}
+                        actual: {}"#
+                        ),
+                        "expected".on_ansi_color(Color::RemovedRow),
+                        "actual".on_ansi_color(Color::AddedRow),
+                        format_flagged_list(
+                            &self.0.iter().collect_vec(),
+                            &remaining,
+                            '-',
+                            Color::RemovedRow
+                        ),
+                        format_flagged_list(&value, &extras, '+', Color::AddedRow)
+                    ))
+                }
+            }
+            #[cfg(not(feature = "diff"))]
+            {
+                CheckResult::Fail(format!(
+                    dedent!(
+                        r#"
+                    Expectation failed (expected == actual, any order)
+                    actual: {}
+                    expected: {}
+                    extra: {}
+                    unmatched: {}"#
+                    ),
+                    format!("{:#?}", value),
+                    format!("{:#?}", self.0),
+                    format!("{:#?}", extras),
+                    format!("{:#?}", remaining)
+                ))
+            }
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        IterableIsEquivalentToExpectation, IterableIsEquivalentToInAnyOrderExpectation,
-        IterableItemEqualityExpectations,
-    };
+    use super::IterableItemEqualityExpectations;
+    #[cfg(feature = "diff")]
+    use super::{IterableIsEquivalentToExpectation, IterableIsEquivalentToInAnyOrderExpectation};
+    #[cfg(feature = "diff")]
     use crate::diff::{Color, diff_pretty_debug, format_flagged_list};
+    use crate::expect;
+    #[cfg(feature = "diff")]
     use crate::expectations::EqualityExpectations;
-    use crate::{CheckResult, Expectation, expect};
+    #[cfg(feature = "diff")]
+    use crate::{CheckResult, Expectation};
+    #[cfg(feature = "diff")]
     use colored::Colorize;
+    #[cfg(feature = "diff")]
     use dedent::dedent;
+    #[cfg(feature = "diff")]
     use itertools::Itertools;
     use rstest::rstest;
 

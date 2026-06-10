@@ -34,6 +34,8 @@ If that fails, the error is not the most helpful, it'll only tell you that the a
 With rxpect, you'll not only get a more readable assertion, the error message is more helpful too.
 
 ```rust,no_run
+# #[cfg(feature = "diff")]
+# {
 use rxpect::expect;
 use rxpect::expectations::iterables::IterableItemEqualityExpectations;
 let haystack = vec![1, 2, 3, 4, 5, 6];
@@ -41,6 +43,7 @@ let needle = 7;
 
 // Expect to find the needle in the haystack
 expect(haystack).to_contain_equal_to(needle);
+# }
 ```
 
 ```shell
