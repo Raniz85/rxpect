@@ -68,18 +68,49 @@ pub fn diff_pretty_debug<T: Debug, U: Debug>(a: &T, b: &U) -> String {
     output.iter().join("").trim_end().to_string()
 }
 
+fn contains_ref<T>(haystack: &[&T], needle: &T) -> bool {
+    haystack.iter().any(|item| std::ptr::eq(*item, needle))
+}
+
+pub fn format_flagged_list<T: Debug>(
+    items: &[&T],
+    flagged_items: &[&T],
+    prefix: char,
+    color: Color,
+) -> String {
+    let diff_items = items
+        .iter()
+        .map(|item| {
+            if contains_ref(flagged_items, item) {
+                format!("{:#?},", item)
+                    .split('\n')
+                    .map(|line| format!("{}    {}", prefix, line).on_ansi_color(color))
+                    .join("\n")
+            } else {
+                format!("{:#?},", item)
+                    .split('\n')
+                    .map(|line| format!("     {}", line))
+                    .join("\n")
+            }
+        })
+        .map(|item| format!("{item}\n"))
+        .collect_vec();
+    format!("[\n{}]", diff_items.iter().join(""))
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::diff::{Color, diff_pretty_debug};
+    use crate::diff::{Color, diff_pretty_debug, format_flagged_list};
     use crate::expect;
     use crate::expectations::EqualityExpectations;
     use colored::ColoredString;
     use colored::Colorize;
+    use dedent::dedent;
     use itertools::Itertools;
     use rstest::rstest;
     use std::fmt::Debug;
 
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq)]
     #[allow(unused)]
     struct TestEntity {
         id: String,
@@ -171,5 +202,68 @@ mod tests {
         // Then the diff contains the changes
         let expected = expected.into_iter().join("");
         expect(diff).to_equal(expected);
+    }
+
+    #[rstest]
+    #[case(&[1, 2, 3, 4, 5], &[1, 4], format!("[\n     1,\n{}\n     3,\n     4,\n{}\n]",
+            "-    2,".on_ansi_color(Color::RemovedRow),
+            "-    5,".on_ansi_color(Color::RemovedRow),
+    ))]
+    #[case(&[
+        TestEntity::new("foo", 1),
+        TestEntity::new("bar", 2),
+        TestEntity::new("foobar", 3),
+        TestEntity::new("barfoo", 4),
+        TestEntity::new("paj", 5),
+        ], &[1, 4], format!(dedent!(r#"
+            [
+                 TestEntity {{
+                     id: "foo",
+                     value: 1,
+                 }},
+            {}
+            {}
+            {}
+            {}
+                 TestEntity {{
+                     id: "foobar",
+                     value: 3,
+                 }},
+                 TestEntity {{
+                     id: "barfoo",
+                     value: 4,
+                 }},
+            {}
+            {}
+            {}
+            {}
+            ]"#),
+            r#"-    TestEntity {"#.on_ansi_color(Color::RemovedRow),
+            r#"-        id: "bar","#.on_ansi_color(Color::RemovedRow),
+            r#"-        value: 2,"#.on_ansi_color(Color::RemovedRow),
+            r#"-    },"#.on_ansi_color(Color::RemovedRow),
+            r#"-    TestEntity {"#.on_ansi_color(Color::RemovedRow),
+            r#"-        id: "paj","#.on_ansi_color(Color::RemovedRow),
+            r#"-        value: 5,"#.on_ansi_color(Color::RemovedRow),
+            r#"-    },"#.on_ansi_color(Color::RemovedRow),
+    ))]
+    fn that_flag_list_items_are_rendering_flagged_items_correctly<T: PartialEq + Debug>(
+        #[case] items: &[T],
+        #[case] flagged_indices: &[usize],
+        #[case] expected_output: impl AsRef<str>,
+    ) {
+        // And a list of items to flag
+        let flagged_items = flagged_indices.iter().map(|&i| &items[i]).collect_vec();
+
+        // When flagged items is rendered
+        let output = format_flagged_list(
+            &items.iter().collect_vec(),
+            &flagged_items,
+            '-',
+            Color::RemovedRow,
+        );
+
+        // Then the flagged items are in the rendered color
+        expect(output).to_equal(expected_output.as_ref());
     }
 }

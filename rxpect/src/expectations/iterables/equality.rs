@@ -1,6 +1,7 @@
-use crate::diff::{Color, diff_pretty_debug};
+use crate::diff::{Color, diff_pretty_debug, format_flagged_list};
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 use colored::Colorize;
+use dedent::dedent;
 use itertools::EitherOrBoth::Both;
 use itertools::Itertools;
 use std::fmt::Debug;
@@ -154,14 +155,15 @@ where
     C: PartialEq + Debug,
 {
     fn check(&self, value: &I) -> CheckResult {
+        let value = value.into_iter().collect_vec();
         let mut remaining: Vec<&C> = self.0.iter().collect();
         let mut extras: Vec<&C> = Vec::new();
-        for actual in value.into_iter() {
+        for actual in value.iter() {
             if let Some(pos) = remaining.iter().position(|e| (*e).eq(actual)) {
-                // Remove matched item; swap_remove is O(1)
-                remaining.swap_remove(pos);
+                // Remove matched item to keep track of remaining ones
+                remaining.remove(pos);
             } else {
-                // No match found for this actual item; record as extra and continue
+                // No match found for this item; record as extra and continue
                 extras.push(actual);
             }
         }
@@ -173,14 +175,42 @@ where
             let extra = extras[0];
             let diff = diff_pretty_debug(remaining, extra);
             CheckResult::Fail(format!(
-                "Expectation failed ({} ≅ {}, any order)\nSingle differing element\n{diff}",
+                "Expectation failed ({} == {}, any order)\nSingle differing element\n{diff}",
                 "expected".on_ansi_color(Color::RemovedRow),
                 "actual".on_ansi_color(Color::AddedRow)
             ))
+        } else if cfg!(feature = "diff") {
+            CheckResult::Fail(format!(
+                dedent!(
+                    r#"
+                Expectation failed ({} == {}, any order)
+                expected: {}
+                actual: {}"#
+                ),
+                "expected".on_ansi_color(Color::RemovedRow),
+                "actual".on_ansi_color(Color::AddedRow),
+                format_flagged_list(
+                    &self.0.iter().collect_vec(),
+                    &remaining,
+                    '-',
+                    Color::RemovedRow
+                ),
+                format_flagged_list(&value, &extras, '+', Color::AddedRow)
+            ))
         } else {
             CheckResult::Fail(format!(
-                "Expectation failed (expected ≅ actual, any order)\n  actual: `{:?}`\nexpected: `{:?}`\nextra: `{:?}`\nunmatched: `{:?}`",
-                value, self.0, extras, remaining
+                dedent!(
+                    r#"
+                Expectation failed (expected == actual, any order)
+                actual: {}
+                expected: {}
+                extra: {}
+                unmatched: {}"#
+                ),
+                format!("{:#?}", value),
+                format!("{:#?}", self.0),
+                format!("{:#?}", extras),
+                format!("{:#?}", remaining)
             ))
         }
     }
@@ -192,10 +222,12 @@ mod tests {
         IterableIsEquivalentToExpectation, IterableIsEquivalentToInAnyOrderExpectation,
         IterableItemEqualityExpectations,
     };
-    use crate::diff::{Color, diff_pretty_debug};
+    use crate::diff::{Color, diff_pretty_debug, format_flagged_list};
     use crate::expectations::EqualityExpectations;
     use crate::{CheckResult, Expectation, expect};
     use colored::Colorize;
+    use dedent::dedent;
+    use itertools::Itertools;
     use rstest::rstest;
 
     #[test]
@@ -336,10 +368,51 @@ mod tests {
             _ => "Passed".to_string(),
         };
         expect(message).to_equal(format!(
-            "Expectation failed ({} ≅ {}, any order)\nSingle differing element\n{}",
+            "Expectation failed ({} == {}, any order)\nSingle differing element\n{}",
             "expected".on_ansi_color(Color::RemovedRow),
             "actual".on_ansi_color(Color::AddedRow),
             diff_pretty_debug(&4, &2)
+        ));
+    }
+
+    #[cfg(feature = "diff")]
+    #[test]
+    pub fn that_equivalent_to_in_any_order_with_multiple_differences_returns_colored_set_difference()
+     {
+        // Given an actual collection and an expected collection that differ in multiple elements
+        let actual = vec![1, 2, 9, 8];
+        let expected = vec![1, 2, 3, 4];
+
+        // When the any-order equivalence expectation is checked
+        let result = IterableIsEquivalentToInAnyOrderExpectation(expected.clone()).check(&actual);
+
+        // Then the failure message contains the colored set difference of missing and extra items
+        let message = match result {
+            CheckResult::Fail(message) => message,
+            _ => "Passed".to_string(),
+        };
+        expect(message).to_equal(format!(
+            dedent!(
+                r#"
+            Expectation failed ({} == {}, any order)
+            expected: {}
+            actual: {}
+            "#
+            ),
+            "expected".on_ansi_color(Color::RemovedRow),
+            "actual".on_ansi_color(Color::AddedRow),
+            format_flagged_list(
+                &expected.iter().collect_vec(),
+                &[&expected[2], &expected[3]],
+                '-',
+                Color::RemovedRow
+            ),
+            format_flagged_list(
+                &actual.iter().collect_vec(),
+                &[&actual[2], &actual[3]],
+                '+',
+                Color::AddedRow
+            )
         ));
     }
 }

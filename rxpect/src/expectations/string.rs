@@ -1,7 +1,6 @@
 use super::predicate::PredicateExpectation;
-use crate::diff::{Color, diff_pretty_debug};
+use crate::diff::diff_pretty_debug;
 use crate::{CheckResult, ExpectProjection, Expectation, ExpectationBuilder};
-use colored::Colorize;
 use std::fmt::Debug;
 
 /// Expectations for strings
@@ -282,12 +281,12 @@ where
 #[cfg(test)]
 mod tests {
     use super::{EndsWithExpectation, StartsWithExpectation};
-    use crate::diff::{Color, diff_pretty_debug};
+    use crate::diff::diff_pretty_debug;
     use crate::expect;
     use crate::expectations::EqualityExpectations;
     use crate::expectations::string::StringExpectations;
     use crate::{CheckResult, Expectation};
-    use colored::Colorize;
+
     use rstest::rstest;
 
     #[rstest]
