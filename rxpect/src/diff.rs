@@ -113,7 +113,6 @@ mod tests {
     use colored::ColoredString;
     use colored::Colorize;
     use dedent::dedent;
-    use itertools::Itertools;
     use rstest::rstest;
     use std::fmt::Debug;
 
@@ -146,8 +145,10 @@ mod tests {
         // Then the diff contains no changes
         let padded_lines = format!("{:#?}", input)
             .split("\n")
-            .map(|line| " ".to_string() + line)
-            .join("\n");
+            .map(|line| format!(" {line}\n"))
+            .collect::<String>()
+            .trim_end()
+            .to_string();
         expect(diff).to_equal(padded_lines);
     }
 
@@ -207,7 +208,10 @@ mod tests {
         let diff = diff_pretty_debug(&a, &b);
 
         // Then the diff contains the changes
-        let expected = expected.into_iter().join("");
+        let expected = expected
+            .into_iter()
+            .map(|c| c.to_string())
+            .collect::<String>();
         expect(diff).to_equal(expected);
     }
 
@@ -260,11 +264,14 @@ mod tests {
         #[case] expected_output: impl AsRef<str>,
     ) {
         // And a list of items to flag
-        let flagged_items = flagged_indices.iter().map(|&i| &items[i]).collect_vec();
+        let flagged_items = flagged_indices
+            .iter()
+            .map(|&i| &items[i])
+            .collect::<Vec<_>>();
 
         // When flagged items is rendered
         let output = format_flagged_list(
-            &items.iter().collect_vec(),
+            &items.iter().collect::<Vec<_>>(),
             &flagged_items,
             '-',
             Color::RemovedRow,

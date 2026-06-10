@@ -1,4 +1,4 @@
-#![doc=include_str!("../README.md")]
+#![cfg_attr(feature = "iterables", doc=include_str!("../README.md"))]
 mod borrow;
 #[cfg(feature = "diff")]
 pub mod diff;

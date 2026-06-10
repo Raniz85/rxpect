@@ -34,8 +34,10 @@ If that fails, the error is not the most helpful, it'll only tell you that the a
 With rxpect, you'll not only get a more readable assertion, the error message is more helpful too.
 
 ```rust,no_run
-# #[cfg(feature = "diff")]
-# {
+# #[cfg(not(feature = "itertools"))]
+# fn main() {}
+# #[cfg(feature = "itertools")]
+# fn main() {
 use rxpect::expect;
 use rxpect::expectations::iterables::IterableItemEqualityExpectations;
 let haystack = vec![1, 2, 3, 4, 5, 6];
