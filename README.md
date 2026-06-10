@@ -17,6 +17,7 @@ thread 'main' (311272) panicked at /home/raniz/src/rxpect/src/root.rs:54:13:
 Expectation failed (a ⊇ b)
 a: `[1, 2, 3, 4, 5, 6]`
 b: `[7]`
+```
 
 ## Workspace contents
 
