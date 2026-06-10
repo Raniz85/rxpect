@@ -42,7 +42,11 @@ fn format_inline_change(
 pub fn diff_pretty_debug<T: Debug, U: Debug>(a: &T, b: &U) -> String {
     let a = format!("{:#?}", a);
     let b = format!("{:#?}", b);
-    let diff = TextDiff::from_lines(&a, &b);
+    diff_pretty(&a, &b)
+}
+
+pub fn diff_pretty(a: &str, b: &str) -> String {
+    let diff = TextDiff::from_lines(a, b);
     let mut output = Vec::new();
     for change in diff
         .ops()

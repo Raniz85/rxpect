@@ -1,6 +1,7 @@
 use super::predicate::PredicateExpectation;
-use crate::diff::diff_pretty_debug;
+use crate::diff::{Color, diff_pretty, diff_pretty_debug};
 use crate::{CheckResult, ExpectProjection, Expectation, ExpectationBuilder};
+use colored::Colorize;
 use std::fmt::Debug;
 
 /// Expectations for strings
@@ -8,6 +9,21 @@ pub trait StringExpectations<'e, T>
 where
     T: Debug + 'e,
 {
+    /// Expect that a string equals another string
+    ///
+    /// This does the exact same assertion as [`equality::to_equal`], but does auto-conversion to strings and
+    /// uses the string and not the debug representation for diffs.
+    ///
+    /// ```
+    /// # use rxpect::expect;
+    /// # use rxpect::expectations::StringExpectations;
+    ///
+    /// let text = "Hello, world!";
+    /// expect(text).to_equal_str("Hello, world!");
+    /// ```
+    /// asserts that `text` is the "world"
+    fn to_equal_str(self, expected: &'e str) -> Self;
+
     /// Expect that a string contains a substring
     /// ```
     /// # use rxpect::expect;
@@ -139,6 +155,10 @@ where
     T: AsRef<str> + Debug + 'e,
     B: ExpectationBuilder<'e, Value = T>,
 {
+    fn to_equal_str(self, expected: &'e str) -> Self {
+        self.to_pass(ToEqualStrExpectation(expected))
+    }
+
     fn to_contain(self, substring: &'e str) -> Self {
         self.to_pass(PredicateExpectation::new(
             substring,
@@ -225,6 +245,32 @@ where
     }
 }
 
+struct ToEqualStrExpectation<'e>(&'e str);
+
+impl<'e, T> Expectation<T> for ToEqualStrExpectation<'e>
+where
+    T: AsRef<str> + Debug,
+{
+    fn check(&self, value: &T) -> CheckResult {
+        let value = value.as_ref();
+        if value.eq(self.0) {
+            CheckResult::Pass
+        } else if cfg!(feature = "diff") {
+            let diff = diff_pretty(self.0, value);
+            CheckResult::Fail(format!(
+                "Expectation failed ({} == {})\n{diff}",
+                "expected".on_ansi_color(Color::RemovedRow),
+                "actual".on_ansi_color(Color::AddedRow)
+            ))
+        } else {
+            CheckResult::Fail(format!(
+                "Expectation failed (expected == actual)\nexpected: `{:?}`\n  actual: `{:?}`",
+                &self.0, value
+            ))
+        }
+    }
+}
+
 struct StartsWithExpectation<'e>(&'e str);
 
 struct EndsWithExpectation<'e>(&'e str);
@@ -280,7 +326,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{EndsWithExpectation, StartsWithExpectation};
+    use super::{EndsWithExpectation, StartsWithExpectation, ToEqualStrExpectation};
     use crate::diff::diff_pretty_debug;
     use crate::expect;
     use crate::expectations::EqualityExpectations;
@@ -561,5 +607,48 @@ mod tests {
     #[should_panic]
     fn that_to_be_numeric_does_not_pass_when_string_is_not_numeric(#[case] actual: &str) {
         expect(actual).to_be_numeric();
+    }
+
+    #[rstest]
+    #[case("")]
+    #[case("abc")]
+    #[case("1a")]
+    #[case("a1")]
+    #[case("1 2")]
+    #[case("1-2")]
+    #[case("١٢٣")]
+    #[case("Ä")]
+    #[case("中文")]
+    #[case("héllo")]
+    fn that_to_equal_str_considers_equal_strings_equal(#[case] actual: &str) {
+        expect(actual).to_equal_str(actual);
+    }
+
+    #[rstest]
+    #[case("")]
+    #[case("abc")]
+    #[case("1a")]
+    #[case("a1")]
+    #[case("1 2")]
+    #[case("1-2")]
+    #[case("١٢٣")]
+    #[case("Ä")]
+    #[case("中文")]
+    #[case("héllo")]
+    #[should_panic]
+    fn that_to_equal_str_does_not_consider_inequal_strings_equal(#[case] actual: &str) {
+        expect(actual).to_equal_str("hello");
+    }
+
+    #[test]
+    fn that_to_equal_str_uses_the_actual_string_for_diffing() {
+        // Given an error message of two strings that are not equal
+        let error = match ToEqualStrExpectation("foo\nbar").check(&"bar\nfoo") {
+            CheckResult::Fail(message) => message,
+            _ => unreachable!(),
+        };
+
+        // Expect error to contain no double quotation marks and no escaped line breaks
+        expect(error).to_not_contain("\"").to_not_contain("\\n");
     }
 }
