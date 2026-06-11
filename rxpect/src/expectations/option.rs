@@ -4,7 +4,7 @@ use crate::projection::{ProjectedExpectations, ProjectedExpectationsBuilder};
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
-/// Extension trait for Option expectations
+/// Extension trait for expectations on [`Option`]s
 pub trait OptionExpectations<'e, T>
 where
     T: Debug,
@@ -43,16 +43,11 @@ where
     fn to_be_some_matching<F>(self, predicate: F) -> Self
     where
         F: Fn(&T) -> bool + 'e;
-}
 
-pub trait ProjectedOptionExpectations<'e, T>
-where
-    T: Debug + 'e,
-{
     /// Expect the Option to be Some and then chain into further expectations
     /// ```
     /// # use rxpect::expect;
-    /// # use rxpect::expectations::{EqualityExpectations, ProjectedOptionExpectations};
+    /// # use rxpect::expectations::{EqualityExpectations, OptionExpectations};
     ///
     /// let option: Option<i32> = Some(42);
     /// expect(option).to_be_some_and().to_equal(42);
@@ -100,13 +95,7 @@ where
     {
         self.to_pass(IsSomeMatchingExpectation(predicate))
     }
-}
 
-impl<'e, T, B> ProjectedOptionExpectations<'e, T> for B
-where
-    T: Debug + 'e,
-    B: ExpectationBuilder<'e, Value = Option<T>>,
-{
     fn to_be_some_and(self) -> ProjectedExpectationsBuilder<'e, Self, Option<T>, T> {
         let (expectation, expectations) =
             ProjectedExpectations::new(some_extract::<T>, some_fail_message::<T>);
@@ -141,7 +130,7 @@ impl<T: Debug, F: Fn(&T) -> bool> Expectation<Option<T>> for IsSomeMatchingExpec
 mod tests {
     use crate::expect;
     use crate::expectations::EqualityExpectations;
-    use crate::expectations::option::{OptionExpectations, ProjectedOptionExpectations};
+    use crate::expectations::option::OptionExpectations;
 
     #[test]
     pub fn that_to_be_some_accepts_some_values() {

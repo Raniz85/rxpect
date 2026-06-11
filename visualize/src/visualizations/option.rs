@@ -2,7 +2,7 @@ use crate::data::{Child, Parent};
 use crate::extract_failure_message;
 use crate::visualization::Visualization;
 use rxpect::expect;
-use rxpect::expectations::{EqualityExpectations, OptionExpectations, ProjectedOptionExpectations};
+use rxpect::expectations::{EqualityExpectations, OptionExpectations};
 
 pub fn visualizations() -> Vec<Visualization> {
     vec![

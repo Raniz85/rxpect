@@ -57,17 +57,11 @@ where
     fn to_be_err_matching<F>(self, predicate: F) -> Self
     where
         F: Fn(&E) -> bool + 'e;
-}
 
-pub trait ProjectedResultExpectations<'e, T, E>
-where
-    T: Debug + 'e,
-    E: Debug + 'e,
-{
     /// Expect the Result to be Ok and then chain into further expectations
     /// ```
     /// # use rxpect::expect;
-    /// # use rxpect::expectations::{EqualityExpectations, ProjectedResultExpectations};
+    /// # use rxpect::expectations::{EqualityExpectations, ResultExpectations};
     ///
     /// let result: Result<i32, &str> = Ok(42);
     /// expect(result).to_be_ok_and().to_equal(42);
@@ -80,7 +74,7 @@ where
     /// Expect the Result to be Err and then chain into further expectations
     /// ```
     /// # use rxpect::expect;
-    /// # use rxpect::expectations::{EqualityExpectations, ProjectedResultExpectations};
+    /// # use rxpect::expectations::{EqualityExpectations, ResultExpectations};
     ///
     /// let result: Result<i32, &str> = Err("Error message");
     /// expect(result).to_be_err_and().to_equal("Error message");
@@ -146,14 +140,7 @@ where
     {
         self.to_pass(IsErrMatchingExpectation(predicate))
     }
-}
 
-impl<'e, T, E, B> ProjectedResultExpectations<'e, T, E> for B
-where
-    T: Debug + 'e,
-    E: Debug + 'e,
-    B: ExpectationBuilder<'e, Value = Result<T, E>>,
-{
     fn to_be_ok_and(self) -> ProjectedExpectationsBuilder<'e, Self, Result<T, E>, T> {
         let (expectation, expectations) =
             ProjectedExpectations::new(ok_extract::<T, E>, ok_fail_message::<T, E>);
@@ -222,7 +209,7 @@ impl<T: Debug, E: Debug, F: Fn(&E) -> bool> Expectation<Result<T, E>>
 #[cfg(test)]
 mod tests {
     use crate::expectations::EqualityExpectations;
-    use crate::expectations::result::{ProjectedResultExpectations, ResultExpectations};
+    use crate::expectations::result::ResultExpectations;
     use crate::{expect, expect_ref};
 
     #[test]
