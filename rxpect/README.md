@@ -266,9 +266,9 @@ Fluent assertions is not my idea. Plenty of other projects implement the idea, b
 
 Here's a list of similar tools that I have used before and may or may not have inspired features in RXpect:
 
-- [https://fluentassertions.com](Fluent Assertions (.NET))
-- [https://jestjs.io](Jest (JS))
-- [https://assertj.github.io](AssertJ (Java))
+- [Fluent Assertions (.NET)](https://fluentassertions.com)
+- [Jest (JS)](https://jestjs.io)
+- [AssertJ (JVM)](https://assertj.github.io)
 
 Huge thanks also goes out to the dependencies (which I try to keep minimal), without which, some functionality would have been a lot harder to implement:
 

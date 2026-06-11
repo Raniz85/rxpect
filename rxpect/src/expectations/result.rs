@@ -4,7 +4,7 @@ use crate::projection::{ProjectedExpectations, ProjectedExpectationsBuilder};
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
-/// Extension trait for Result expectations
+/// Extension trait for expectations on [`Result`]s and their contained values
 pub trait ResultExpectations<'e, T, E>
 where
     T: Debug,

@@ -13,8 +13,8 @@ where
 {
     /// Expect that a string equals another string
     ///
-    /// This does the exact same assertion as [`equality::to_equal`], but does auto-conversion to strings and
-    /// uses the string and not the debug representation for diffs.
+    /// This does the exact same assertion as [EqualityExpectations::to_equal](crate::expectations::EqualityExpectations::to_equal),
+    /// but uses the string and not the debug representation for diffs.
     ///
     /// ```
     /// # use rxpect::expect;
