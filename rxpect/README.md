@@ -247,6 +247,20 @@ expect(2).to_be_even();
 expect(3).to_be_odd();
 ```
 
+## Features
+
+The following features are available and enabled by default:
+
+* _iterables_, expectations regarding iterables. Pulls in [itertools](https://lib.rs/itertools) as a dependency.
+* _diff, colored diffing of certain error messages. Pulls in [colored](https://lib.rs/colored) and [similar](https://lib.rs/similar) as dependencies
+
+### Colour
+
+`Colored` automatically determines if colours should be enabled or not. Sometimes it gets it wrong though,
+and this can be controlled via the `CLICOLOR_FORCE` [environment variable](https://docs.rs/colored/latest/colored/control/struct.ShouldColorize.html#method.from_env).
+
+This needs to be set, for example, for coloured output to show when running tests in [JetBrains RustRover](https://www.jetbrains.com/rust/).
+
 ## Credits
 Fluent assertions is not my idea. Plenty of other projects implement the idea, both in Rust and other languages.
 
