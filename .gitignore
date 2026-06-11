@@ -1,3 +1,9 @@
+# Rust stuff
 /target
 /Cargo.lock
+
+# IDE stuff
 .idea
+
+# Model stuff
+**/.claude/settings.local.json
