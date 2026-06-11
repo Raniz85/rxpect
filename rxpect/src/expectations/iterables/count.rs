@@ -1,7 +1,7 @@
 use crate::{CheckResult, ExpectProjection, Expectation, ExpectationBuilder};
 use std::fmt::Debug;
 
-/// Extension trait for equality expectations for iterables
+/// Extension trait for expectations on the count of an iterable
 pub trait IterableCountExpectations<'e, B>
 where
     B: ExpectationBuilder<'e>,

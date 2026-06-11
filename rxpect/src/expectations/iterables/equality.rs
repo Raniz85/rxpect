@@ -26,7 +26,7 @@ where
     /// asserts that `haystack` contains at least one item equal to `needle`
     fn to_contain_equal_to(self, value: C) -> Self;
 
-    /// Expect an iterable to contain at least one value equal to another value
+    /// Expect an iterable to contain at least one of each of the expected values
     /// ```
     /// # use rxpect::expect;
     /// # use rxpect::expectations::iterables::IterableItemEqualityExpectations;
@@ -62,7 +62,7 @@ where
     /// expect(a).to_be_equivalent_to_in_any_order(c);
     /// expect(b).to_be_equivalent_to_in_any_order(c);
     /// ```
-    /// asserts that `a` contains exactly the same items in the same order as `b`
+    /// asserts that `a` contains exactly the same items as `b`, in any order
     fn to_be_equivalent_to_in_any_order(self, values: impl IntoIterator<Item = C>) -> Self;
 }
 

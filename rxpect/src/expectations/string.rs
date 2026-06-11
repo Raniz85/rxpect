@@ -23,7 +23,7 @@ where
     /// let text = "Hello, world!";
     /// expect(text).to_equal_str("Hello, world!");
     /// ```
-    /// asserts that `text` is the "world"
+    /// asserts that `text` is "Hello, world!"
     fn to_equal_str(self, expected: &'e str) -> Self;
 
     /// Expect that a string contains a substring

@@ -26,7 +26,7 @@ pub trait EqualityExpectations<T, U> {
     /// let b = "foo";
     /// expect(a).to_equal(b);
     /// ```
-    /// asserts that `b.eq(a)` is true
+    /// asserts that `a.eq(b)` is true
     fn to_equal(self, value: U) -> Self;
 }
 
