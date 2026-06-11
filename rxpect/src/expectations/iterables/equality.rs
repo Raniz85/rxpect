@@ -3,7 +3,6 @@ use crate::diff::{Color, diff_pretty_debug, format_flagged_list};
 use crate::{CheckResult, Expectation, ExpectationBuilder};
 #[cfg(feature = "diff")]
 use colored::Colorize;
-use dedent::dedent;
 use itertools::EitherOrBoth::Both;
 use itertools::Itertools;
 use std::fmt::Debug;
@@ -191,12 +190,7 @@ where
                     ))
                 } else {
                     CheckResult::Fail(format!(
-                        dedent!(
-                            r#"
-                        Expectation failed ({} == {}, any order)
-                        expected: {}
-                        actual: {}"#
-                        ),
+                        "Expectation failed ({} == {}, any order)\nexpected: {}\nactual: {}",
                         "expected".on_ansi_color(Color::RemovedRow),
                         "actual".on_ansi_color(Color::AddedRow),
                         format_flagged_list(
@@ -212,14 +206,7 @@ where
             #[cfg(not(feature = "diff"))]
             {
                 CheckResult::Fail(format!(
-                    dedent!(
-                        r#"
-                    Expectation failed (expected == actual, any order)
-                    actual: {}
-                    expected: {}
-                    extra: {}
-                    unmatched: {}"#
-                    ),
+                    "Expectation failed (expected == actual, any order)\nactual: {}\nexpected: {}\nextra: {}\nunmatched: {}",
                     format!("{:#?}", value),
                     format!("{:#?}", self.0),
                     format!("{:#?}", extras),
