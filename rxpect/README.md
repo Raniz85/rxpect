@@ -282,7 +282,7 @@ Huge thanks also goes out to the dependencies (which I try to keep minimal), wit
 Contributions are always welcome.
 
 Before contributing anything, however,
-make sure there is an open [Issue](https://github.com/raniz85/rxpect/issues) for your intended contribution.
+make sure there is an open [Issue](https://codeberg.org/raniz/rxpect/issues) for your intended contribution.
 
 If there is not already an open issue,
 please create one and describe your use case so we can discuss if it fits within RXpect or is better suited to an extension crate.
