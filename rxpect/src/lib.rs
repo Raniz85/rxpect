@@ -16,10 +16,6 @@ pub use root::RefExpectations;
 
 use std::fmt::Debug;
 
-#[doc = include_str!("../README.md")]
-#[cfg(doctest)]
-pub struct ReadmeDoctests;
-
 /// Result of an expectation check
 #[derive(Clone, Debug)]
 pub enum CheckResult {
