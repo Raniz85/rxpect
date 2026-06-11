@@ -34,9 +34,9 @@ If that fails, the error is not the most helpful, it'll only tell you that the a
 With rxpect, you'll not only get a more readable assertion, the error message is more helpful too.
 
 ```rust,no_run
-# #[cfg(not(feature = "itertools"))]
+# #[cfg(not(feature = "iterables"))]
 # fn main() {}
-# #[cfg(feature = "itertools")]
+# #[cfg(feature = "iterables")]
 # fn main() {
 use rxpect::expect;
 use rxpect::expectations::iterables::IterableItemEqualityExpectations;
@@ -199,7 +199,7 @@ use rxpect::Expectation;
 use rxpect::CheckResult;
 use rxpect::expectations::PredicateExpectation;
 
-// This is the extension trat that defines the extension methods
+// This is the extension trait that defines the extension methods
 pub trait ToBeEvenExpectations {
     fn to_be_even(self) -> Self;
     fn to_be_odd(self) -> Self;
@@ -252,7 +252,7 @@ expect(3).to_be_odd();
 The following features are available and enabled by default:
 
 * _iterables_, expectations regarding iterables. Pulls in [itertools](https://lib.rs/itertools) as a dependency.
-* _diff, colored diffing of certain error messages. Pulls in [colored](https://lib.rs/colored) and [similar](https://lib.rs/similar) as dependencies
+* _diff_, coloured diffing of certain error messages. Pulls in [colored](https://lib.rs/colored) and [similar](https://lib.rs/similar) as dependencies
 
 ### Colour
 
@@ -284,7 +284,8 @@ Contributions are always welcome.
 Before contributing anything, however,
 make sure there is an open [Issue](https://github.com/raniz85/rxpect/issues) for your intended contribution.
 
-If there is not already an open issue, please create one and describe your use case so we can discuss if it fits within RXxpect or is better suited to an extension crate.
+If there is not already an open issue,
+please create one and describe your use case so we can discuss if it fits within RXpect or is better suited to an extension crate.
 
 Please keep pull requests focused and self-contained.
 Stick to one expectation area (i.e. string, iterables, equality, etc.) per PR.
