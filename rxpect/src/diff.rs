@@ -1,7 +1,9 @@
+//! Helper functions and utilities for coloured diffs
 use colored::Colorize;
 use similar::{ChangeTag, InlineChange, TextDiff};
 use std::fmt::Debug;
 
+/// Colour definitions for diffs
 #[derive(Copy, Clone, Debug)]
 pub enum Color {
     RemovedRow = 224,
@@ -16,6 +18,7 @@ impl From<Color> for u8 {
     }
 }
 
+/// Format an inline string using defined colours
 fn format_inline_change(
     prefix: char,
     change: InlineChange<'_, str>,
@@ -38,12 +41,56 @@ fn format_inline_change(
     line
 }
 
+/// Produce a pretty diff using the arguments pretty-printed debug representations
+///
+/// ```
+/// use rxpect::diff::diff_pretty_debug;
+///
+/// #[derive(Debug)]
+/// struct TestEntity {
+///     id: String,
+///     value: i32,
+/// }
+///
+/// let expected = TestEntity { id: "foo".to_string(), value: 7 };
+/// let actual = TestEntity { id: "foo".to_string(), value: 8 };
+///
+/// println!("{}", diff_pretty_debug(&expected, &actual));
+/// ```
+///
+/// produces:
+///
+/// <pre>
+///  TestEntity {
+///      id: "foo",
+/// <span style="background: #ffd7d7">-    value: <span style="background: #ffafaf">7,</span></span>
+/// <span style="background: #d7ffd7">+    value: <span style="background: #afffaf">8,</span></span>
+///  }
+/// </pre>
 pub fn diff_pretty_debug<T: Debug, U: Debug>(a: &T, b: &U) -> String {
     let a = format!("{:#?}", a);
     let b = format!("{:#?}", b);
     diff_pretty(&a, &b)
 }
 
+/// Produce a pretty diff using two strings
+///
+/// ```
+/// use rxpect::diff::diff_pretty;
+///
+/// let expected = "name: Alice\nage: 30";
+/// let actual = "name: Alice\nage: 31";
+///
+/// println!("{}", diff_pretty(expected, actual));
+/// ```
+///
+/// produces:
+///
+/// <pre>
+///  name: Alice
+/// <span style="background: #ffd7d7">-age: <span style="background: #ffafaf">30</span></span>
+/// <span style="background: #d7ffd7">+age: <span style="background: #afffaf">31</span></span>
+/// </pre>
 pub fn diff_pretty(a: &str, b: &str) -> String {
     let diff = TextDiff::from_lines(a, b);
     let mut output = Vec::new();
@@ -79,6 +126,49 @@ fn contains_ref<T>(haystack: &[&T], needle: &T) -> bool {
     haystack.iter().any(|item| std::ptr::eq(*item, needle))
 }
 
+/// Format a list of items, highlighting the items in `flagged_items` with the given colour and prefix
+/// Indents all the items with four spaces, puts the prefix at the start of each line and colours the whole lines using the given colour
+///
+/// ```
+/// use rxpect::diff::{format_flagged_list, Color};
+///
+/// #[derive(Debug)]
+/// struct TestEntity {
+///     id: String,
+///     value: i32,
+/// }
+///
+/// let items = [
+///     TestEntity { id: "apple".to_string(), value: 1 },
+///     TestEntity { id: "orange".to_string(), value: 2 },
+///     TestEntity { id: "pear".to_string(), value: 3 },
+/// ];
+/// let refs: Vec<&TestEntity> = items.iter().collect();
+///
+/// // Flag the second item for removal
+/// let flagged = [&items[1]];
+///
+/// println!("{}", format_flagged_list(&refs, &flagged, '-', Color::RemovedRow));
+/// ```
+///
+/// produces:
+///
+/// <pre>
+/// [
+///      TestEntity {
+///          id: "apple",
+///          value: 1,
+///      },
+/// <span style="background: #ffd7d7">-    TestEntity {</span>
+/// <span style="background: #ffd7d7">-        id: "orange",</span>
+/// <span style="background: #ffd7d7">-        value: 2,</span>
+/// <span style="background: #ffd7d7">-    },</span>
+///      TestEntity {
+///          id: "pear",
+///          value: 3,
+///      },
+/// ]
+/// </pre>
 pub fn format_flagged_list<T: Debug>(
     items: &[&T],
     flagged_items: &[&T],
