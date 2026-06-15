@@ -263,7 +263,7 @@ mod tests {
         // Given a value that implements PartialOrd
         let value = 5;
 
-        // Expect the to_be_inside expectation to not pass with a range that does not include it
+        // Expect the to_be_inside expectation to pass with a range that includes it
         expect(value).to_be_inside(range);
     }
 

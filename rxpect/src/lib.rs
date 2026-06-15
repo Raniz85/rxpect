@@ -28,7 +28,7 @@ pub enum CheckResult {
 /// An expectation on a value
 pub trait Expectation<T: Debug> {
     /// Check this expectation
-    /// Returns CheckResult::Pass if the expectation pass
+    /// Returns CheckResult::Pass if the expectation passes
     /// and CheckResult::Fail with a descriptive message if it didn't
     fn check(&self, value: &T) -> CheckResult;
 }
