@@ -210,7 +210,7 @@ where
     fn to_be_all_whitespace(self) -> Self {
         self.to_pass(PredicateExpectation::new(
             (),
-            |a: &T, _| a.as_ref().chars().all(|c| c.is_whitespace()),
+            |a: &T, _| !a.as_ref().is_empty() && a.as_ref().chars().all(|c| c.is_whitespace()),
             |a: &T, _| format!("Expected \"{}\" to be all whitespace", a.as_ref()),
         ))
     }
@@ -522,7 +522,6 @@ mod tests {
     }
 
     #[rstest]
-    #[case("")]
     #[case(" ")]
     #[case("  ")]
     #[case("\t")]
@@ -533,6 +532,7 @@ mod tests {
     }
 
     #[rstest]
+    #[case("")]
     #[case("a")]
     #[case("foo")]
     #[case(" a")]
