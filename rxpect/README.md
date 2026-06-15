@@ -261,6 +261,17 @@ and this can be controlled via the `CLICOLOR_FORCE` [environment variable](https
 
 This needs to be set, for example, for coloured output to show when running tests in [JetBrains RustRover](https://www.jetbrains.com/rust/).
 
+## Missing features before 1.0
+
+The idea is to stabilise the API and release a 1.0 version with the goal of long-term backwards compatibility.
+However, before that point a few major features are on the TODO list.
+While the overall "feel" of the API is set, these features may require breaking changes to core struct and trait definitions.
+These will most likely only be breaking in case the code explicitly mentions the structs or traits as types (i.e. not just using them via code).
+
+- [ ] Or. Something like `expect(str).to_be_empty().or().to_be_alphanumeric()`
+- [ ] Programmatic configuration of features such as colour (globally and per root).
+- [ ] Custom reason phrases per expectation, or group of expectations
+
 ## Credits
 Fluent assertions is not my idea. Plenty of other projects implement the idea, both in Rust and other languages.
 
