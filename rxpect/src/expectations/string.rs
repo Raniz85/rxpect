@@ -1,15 +1,18 @@
 use super::predicate::PredicateExpectation;
 #[cfg(feature = "diff")]
 use crate::diff::{Color, diff_pretty, diff_pretty_debug};
-use crate::{CheckResult, ExpectProjection, Expectation, ExpectationBuilder};
+use crate::{
+    CheckResult, ExpectProjection, Expectation, ExpectationBuilder, ProjectedExpectationsBuilder,
+};
 #[cfg(feature = "diff")]
 use colored::Colorize;
 use std::fmt::Debug;
 
 /// Expectations for strings
-pub trait StringExpectations<'e, T>
+pub trait StringExpectations<'e, B, T>
 where
-    T: Debug + 'e,
+    T: AsRef<str> + Debug + 'e,
+    B: ExpectationBuilder<'e, Value = T>,
 {
     /// Expect that a string equals another string
     ///
@@ -147,12 +150,12 @@ where
     /// expect(text).length().to_be_greater_than_or_equal(2);
     /// ```
     /// asserts that `text` has a length of at least 2
-    fn length(self) -> impl ExpectationBuilder<'e, Value = usize>
+    fn length(self) -> ProjectedExpectationsBuilder<'e, B, B::Value, usize>
     where
         Self: Sized;
 }
 
-impl<'e, T, B> StringExpectations<'e, T> for B
+impl<'e, T, B> StringExpectations<'e, B, T> for B
 where
     T: AsRef<str> + Debug + 'e,
     B: ExpectationBuilder<'e, Value = T>,
@@ -239,7 +242,7 @@ where
         ))
     }
 
-    fn length(self) -> impl ExpectationBuilder<'e, Value = usize>
+    fn length(self) -> ProjectedExpectationsBuilder<'e, B, B::Value, usize>
     where
         Self: Sized,
     {

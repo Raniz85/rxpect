@@ -4,11 +4,14 @@ mod borrow;
 pub mod diff;
 mod expectation_list;
 pub mod expectations;
+mod groups;
 mod projection;
 mod root;
 
 pub use borrow::BorrowedOrOwned;
 pub use expectation_list::ExpectationList;
+pub use groups::GroupExpectations;
+pub use groups::GroupedExpectationsBuilder;
 pub use projection::ExpectProjection;
 pub use projection::ProjectedExpectationsBuilder;
 pub use root::OwnedExpectations;
