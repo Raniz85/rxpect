@@ -2,6 +2,9 @@
 
 A Rust library for fluently building expectations in tests.
 
+This GitHub repository is a mirror of [the real repository on Codeberg](https://codeberg.org/raniz/rxpect),
+please use that as this repository may experience force pushes.
+
 ```rust,no_run
 use rxpect::expect;
 use rxpect::expectations::iterables::IterableItemEqualityExpectations;
