@@ -21,4 +21,4 @@ b: `[7]`
 
 ## Workspace contents
 
-* [rxpect](/rxpect/README.md) - the core _rxpect_ crate
+* [rxpect](./rxpect/README.md) - the core _rxpect_ crate
